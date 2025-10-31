@@ -1,4 +1,4 @@
-name: htmrlenv
+name: htmrl
 channels:
   - conda-forge
   - defaults
