@@ -1,5 +1,6 @@
 import abc as absract
 
+
 class AbsModel(absract.ABC):
     @absract.abstractmethod
     def train(self, *args, **kwargs) -> object:
