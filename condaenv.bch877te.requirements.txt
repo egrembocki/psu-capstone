@@ -1,0 +1,10 @@
+tensorflow
+keras
+gymnasium[classic_control]
+matplotlib
+scikit-learn
+stable-baselines3
+pdoc
+flake8
+black
+randomname
