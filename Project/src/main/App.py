@@ -10,6 +10,7 @@ ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
 
 DATA_PATH = ROOT_PATH / "Data"
 
+"""Driver code to test InputHandler functionality."""
 
 def main():
     """Main function to demonstrate InputHandler usage."""
@@ -21,6 +22,7 @@ def main():
 
     print("Raw Data Loaded.", type(data_set), "\n", DATA_PATH)
 
+    # Explicitly convert raw data to DataFrame
     data_frame = handler.to_dataframe(data_set)
 
     handler.fill_missing_values(data_frame)
