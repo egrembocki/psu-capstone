@@ -1,12 +1,14 @@
+from abc import ABC
 from numenta import htm
 
 """Encoder module :: contains the Encoder class to encode input data."""
 
-class Encoder:
-    """Class to encode input data."""
+
+class Encoder(ABC):
+    """Class to encode input data into SDR format."""
 
     def __init__(self, data: object):
-        """ Constructor """
+        
         self.data = data
 
     def encode(self) -> str:
