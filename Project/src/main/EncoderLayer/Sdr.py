@@ -6,7 +6,7 @@ import os
 import EncoderLayer.Types as t
 
 
-from sklearn.naive_bayes import abstractmethod
+from abc import abstractmethod
 from typing import Callable, List
 
 
@@ -45,9 +45,9 @@ class SdrArray:
         self.__dimensions = dimensions
         self.__size = size
         for dim in dimensions:
-            self.__size = t.UInt32(int(self.__size) * int(dim))
+            self.__size = t.UInt32(self.__size.value * dim.value)
 
-        self._dense = [elem_dense(0)] * int(self.__size)
+        self._dense = [elem_dense(0)] * self.__size.value
         self._sparse = []
         self._coordinates = []
 
@@ -61,7 +61,7 @@ class SdrArray:
     @abstractmethod
     def clear(self) -> None:
         """Clear the SDR array."""
-        self._dense = [elem_dense(0)] * int(self.__size)
+        self._dense = [elem_dense(0)] * self.__size.value
         self._sparse.clear()
         self._coordinates.clear()
 
@@ -74,7 +74,7 @@ class SdrArray:
     @abstractmethod
     def setDenseInplace(self, dense: sdr_dense_t) -> None:
         """Set the dense representation of the SDR array in place."""
-        if len(dense) != int(self.__size):
+        if len(dense) != self.__size.value:
             raise ValueError("Input dense array size does not match SDR size.")
         
         self._dense = dense
@@ -101,5 +101,5 @@ class SdrArray:
         """Update the sparse representation from the coordinates representation."""
         self._sparse.clear()
         for coord in self._coordinates:
-            if coord < t.UInt32(int(self.__size)):
-                self._sparse.append(elem_sparse(int(coord))) 
+            if coord.value < self.__size.value:
+                self._sparse.append(elem_sparse(coord.value)) 
