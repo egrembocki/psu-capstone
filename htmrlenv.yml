@@ -18,4 +18,5 @@ dependencies:
       - flake8
       - black
       - randomname
+      - openpyxl
       
