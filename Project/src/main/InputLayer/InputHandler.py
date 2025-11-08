@@ -30,9 +30,8 @@ class InputHandler:
     def get_hyperparameters(self) -> dict:
         """ Getter for the hyperparameters attribute """
         return self._hyperparameters
-   
 
-   # main methods to handle input data processing
+    # main methods to handle input data processing
 
     def load_data(self, filepath: str) -> pd.DataFrame:
         """ Load data from a file with padas based on file extension. This will automatically create a dataframe."""
@@ -116,7 +115,7 @@ class InputHandler:
         # Add more cases as needed for different data types
         
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         """Constructor -- Singleton pattern implementation."""
 
         if cls._instance is None:
