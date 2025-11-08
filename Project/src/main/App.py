@@ -1,7 +1,8 @@
-#C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
+
 
 
 import InputLayer.InputHandler as ih
+#import EncoderLayer.Sdr as sdr
 import pathlib as path
 import os
 
