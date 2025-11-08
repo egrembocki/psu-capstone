@@ -9,13 +9,20 @@ import threading
 from enum import IntEnum
 from typing import Callable, Optional
 
+"""
+//this code intentionally uses "if() dosomething" instead of "if() { dosomething }" 
+// as the macro expects another "<< "my clever message";
+// so it eventually becomes: `if() std::cout << "DEBUG:\t" << "users message";`
+//
+//Expected usage: 
+//<your class>:
+//Network::setLogLevel(LogLevel::LogLevel_Verbose);
+//NTA_WARN << "Hello World!" << std::endl; //shows
+//NTA_DEBUG << "more details how cool this is"; //not showing under "Normal" log level
+//NTA_ERR << "You'll always see this, HAHA!";
+//NTA_THROW << "crashing for a good cause";
 
-class HtmException(RuntimeError):
-	"""Base exception mirroring the HTM C++ runtime error."""
-
-
-class HtmAssertionError(HtmException):
-	"""Raised when an HTM assertion fails."""
+"""
 
 
 class LogLevel(IntEnum):

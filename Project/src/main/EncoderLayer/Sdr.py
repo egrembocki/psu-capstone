@@ -5,7 +5,7 @@
 import os
 import random
 import EncoderLayer.types as t
-from LogLayer import logger
+from Project.src.main.LogLayer import loglevel
 
 
 from abc import ABC, abstractmethod
