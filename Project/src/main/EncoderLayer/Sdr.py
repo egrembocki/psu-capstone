@@ -11,7 +11,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, List, TypeAlias
 
 
-
 # defined types for SDR objects
 elem_dense = t.Byte
 elem_sparse = t.UInt32
