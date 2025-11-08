@@ -6,6 +6,7 @@ import inspect
 import logging
 import os
 import threading
+import LogLayer.exceptions as ex
 from enum import IntEnum
 from typing import Callable, Optional
 
@@ -123,7 +124,7 @@ def nta_throw(message: str, *args: object) -> None:
 
 	formatted = message.format(*args) if args else message
 	nta_error(formatted)
-	raise HtmException(formatted)
+	raise ex.HtmException(formatted)
 
 
 def nta_check(condition: bool, message: Optional[str] = None) -> None:
@@ -142,12 +143,10 @@ def nta_assert(condition: bool, message: Optional[str] = None) -> None:
 		return
 	detail = f"ASSERT FAILED: {message}" if message else "ASSERT FAILED"
 	nta_error(detail)
-	raise HtmAssertionError(detail)
+	raise ex.HtmAssertionError(detail)
 
 
 __all__ = [
-	"HtmException",
-	"HtmAssertionError",
 	"LogLevel",
 	"ASSERTIONS_ENABLED",
 	"set_log_level",
