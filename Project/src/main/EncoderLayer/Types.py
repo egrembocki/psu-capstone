@@ -30,9 +30,9 @@ NTA_DOUBLE_PRECISION = False
 NTA_BIG_INTEGER = False
 
 
-def UNUSED(*_args) -> None:
+def un_used(*_args) -> None:
     """Marker for intentionally unused variables."""
-    return
+    return None
 
 
 # ----------------------------------------------------------------------
