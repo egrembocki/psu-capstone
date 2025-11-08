@@ -91,6 +91,7 @@ UInt = UInt64 if NTA_BIG_INTEGER else UInt32
 # Basic types enumeration
 # ----------------------------------------------------------------------
 
+
 class NTABasicType(IntEnum):
     """Basic type enumeration, mirroring the C++ NTA_BasicType enum."""
 
