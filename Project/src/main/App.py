@@ -2,7 +2,6 @@
 
 
 import InputLayer.InputHandler as ih
-#import EncoderLayer.Sdr as sdr
 import pathlib as path
 import os
 
