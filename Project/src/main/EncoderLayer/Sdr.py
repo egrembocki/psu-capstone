@@ -24,8 +24,7 @@ void: TypeAlias = t.Handle
 def do_callbacks() -> None: ...
 sdr_callback_t = Callable[[], None]
 
-class SdrArray():
-    """Class representing a Sparse Distributed Representation (SDR) array."""
+class SDR():
     """Class representing a Sparse Distributed Representation (SDR) array."""
 
     #private members
@@ -97,9 +96,7 @@ class SdrArray():
      vector. Use this method after modifying the flatSparse vector inplace, in
      order to propagate any changes to the dense & coordinate formats."""
         
-        self._sparse = sparse
         
-        self.do_callbacks()
     
     @abstractmethod
     def set_coordinates_inplace(self, coordinates: sdr_coordinate_t) -> None:
@@ -184,7 +181,7 @@ class SdrArray():
         return self._coordinates
     
     @abstractmethod
-    def set_sdr(self, other: 'SdrArray') -> None:
+    def set_sdr(self, other: 'SDR') -> None:
         """ Set this SDR's value to be the same as another SDR's value.
           Deep Copy the given SDR to this SDR.  This overwrites the current value of
           this SDR.  This SDR and the given SDR will have no shared data and they
@@ -201,7 +198,7 @@ class SdrArray():
         """ Get the sparsity of the SDR. """
         return float(len(self.get_sparse())) / float(int(self.__size))
     
-    def get_overlap(self, other: 'SdrArray') -> t.UInt32:
+    def get_overlap(self, other: 'SDR') -> t.UInt32:
         """ Get the overlap between this SDR and another SDR. """
         set_self = set(self.get_sparse())
         set_other = set(other.get_sparse())
@@ -255,36 +252,36 @@ class SdrArray():
         self.do_callbacks()
 
 
-    def intersection(self, other: List['SdrArray']) -> 'SdrArray':
+    def intersection(self, other: List['SDR']) -> 'SDR':
         """ Get the intersection of this SDR with other SDRs. """
         result_sparse = set(self.get_sparse())
         for sdr in other:
             result_sparse = result_sparse.intersection(set(sdr.get_sparse()))
 
-        result = SdrArray(self.__dimensions)
+        result = SDR(self.__dimensions)
         result.set_sparse(list(result_sparse))
         return result
     
 
-    def union(self, other: List['SdrArray']) -> 'SdrArray':
+    def union(self, other: List['SDR']) -> 'SDR':
         """ Get the union of this SDR with other SDRs. """
         result_sparse = set(self.get_sparse())
         for sdr in other:
             result_sparse = result_sparse.union(set(sdr.get_sparse()))
 
-        result = SdrArray(self.__dimensions)
+        result = SDR(self.__dimensions)
         result.set_sparse(list(result_sparse))
         return result
     
 
-    def concat(self, others: List['SdrArray'], axis: t.UInt32) -> 'SdrArray':
+    def concat(self, others: List['SDR'], axis: t.UInt32) -> 'SDR':
         if axis != t.UInt32(0):
             raise NotImplementedError("Only axis=0 is supported.")
         new_dimensions = self.__dimensions.copy()
         for sdr in others:
             new_dimensions.extend(sdr.get_dimensions())
 
-        result = SdrArray(new_dimensions)
+        result = SDR(new_dimensions)
         result_sparse = list(self.get_sparse())
         for sdr in others:
             result_sparse.extend(sdr.get_sparse())
