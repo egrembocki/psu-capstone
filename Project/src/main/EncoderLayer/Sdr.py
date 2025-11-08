@@ -4,7 +4,8 @@
 
 import os
 import random
-import EncoderLayer.Types as t
+import EncoderLayer.types as t
+from LogLayer import logger
 
 
 from abc import ABC, abstractmethod
@@ -20,10 +21,10 @@ sdr_sparse_t = List[elem_sparse]
 sdr_coordinate_t = List[t.UInt32]
 
 # function pointer type for SDR callbacks, not sure how to do this yet
-VoidHandle: TypeAlias = t.Handle
+void: TypeAlias = t.Handle
 
-def callback(value: VoidHandle) -> None: ...
-sdr_callback_t = Callable[[VoidHandle], None]
+def do_callbacks() -> None: ...
+sdr_callback_t = Callable[[], None]
 
 class SdrArray():
     """Class representing a Sparse Distributed Representation (SDR) array."""
@@ -34,7 +35,7 @@ class SdrArray():
     __size: t.UInt32
 
     #hooks for function callbacks
-    __on_changes: List[sdr_callback_t]
+    __callbacks: List[sdr_callback_t]
     __destroy_callbacks: List[sdr_callback_t]
 
     #protected members
@@ -75,10 +76,10 @@ class SdrArray():
         self._coordinates.clear()
 
     
-    def do_callbacks(self, callbacks: List[sdr_callback_t]) -> None:
+    def do_callbacks(self) -> None:
         """Notify everyone that this SDR's value has officially changed."""
-        for callback in callbacks:
-            callback(VoidHandle(id(self)))
+        for callback in self.__callbacks:
+            callback()
         
     @abstractmethod
     def set_dense_inplace(self, dense: sdr_dense_t) -> None:
@@ -90,7 +91,7 @@ class SdrArray():
         
         self._dense = dense
         
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
 
     @abstractmethod
     def set_sparse_inplace(self, sparse: sdr_sparse_t) -> None:
@@ -100,7 +101,7 @@ class SdrArray():
         
         self._sparse = sparse
         
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
     
     @abstractmethod
     def set_coordinates_inplace(self, coordinates: sdr_coordinate_t) -> None:
@@ -109,7 +110,7 @@ class SdrArray():
      order to propagate any changes to the dense & sparse formats."""
         self._coordinates = coordinates
 
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
 
 
     @abstractmethod
@@ -120,7 +121,7 @@ class SdrArray():
      This is a separate method from ~SDR so that SDRs can be destroyed long
      before they're deallocated."""
 
-     self.do_callbacks(self.__destroy_callbacks)
+     self.do_callbacks()
      self._dense.clear()
      self._sparse.clear()
      self._coordinates.clear()
@@ -149,7 +150,7 @@ class SdrArray():
         self._sparse.clear()
         self._coordinates.clear()
         
-        self.do_callbacks(self.__on_changes)  
+        self.do_callbacks()  
 
 
     def set_dense(self, dense: sdr_dense_t) -> None:
@@ -222,7 +223,7 @@ class SdrArray():
         self._sparse = [elem_sparse(index) for index in indices]
         self._coordinates = [elem_sparse(index) for index in indices]
 
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
 
 
     def add_noise(self, *args) -> None:
@@ -236,7 +237,7 @@ class SdrArray():
         self._sparse = [elem_sparse(i) for i, val in enumerate(self._dense) if val != elem_dense(0)]
         self._coordinates = [elem_sparse(i) for i, val in enumerate(self._dense) if val != elem_dense(0)]
 
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
 
 
     def kill_cells(self, fraction: float, seed: t.UInt32 = t.UInt32(0)) -> None:
@@ -253,7 +254,7 @@ class SdrArray():
         self._sparse = [elem_sparse(i) for i, val in enumerate(self._dense) if val != elem_dense(0)]
         self._coordinates = [elem_sparse(i) for i, val in enumerate(self._dense) if val != elem_dense(0)]
 
-        self.do_callbacks(self.__on_changes)
+        self.do_callbacks()
 
 
     def intersection(self, other: List['SdrArray']) -> 'SdrArray':

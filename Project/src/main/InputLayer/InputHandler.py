@@ -16,9 +16,11 @@ class InputHandler:
     _instance = None
     """The single instance of the InputHandler class."""
     
+    # this allows the data to be of any type, but mainly focusing on DataFrame and list for now
     _data: Union[pd.DataFrame, list] = pd.DataFrame()
     """The input data of any type."""
 
+    # might not need this right now, but useful for later -- Pullin mention wanting a dictionary of hyperparameters
     _hyperparameters: dict = {}
     """The hyperparameters associated with the input data."""
   

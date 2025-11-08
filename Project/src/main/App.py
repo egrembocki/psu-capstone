@@ -2,6 +2,7 @@
 
 
 import InputLayer.InputHandler as ih
+import EncoderLayer.sdr as sdr
 import pathlib as path
 import os
 
@@ -29,7 +30,12 @@ def main():
 
     print("Data Frame Created.", type(data_frame), "\n", data_frame.head())
     print("Data Validation:", handler.validate_data())
-    print(data_frame.info())
+    
+
+
+
+
+
 
 if __name__ == "__main__":
       
