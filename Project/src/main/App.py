@@ -1,35 +1,42 @@
-# C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
+"""Main application module to test InputHandler and SDR functionality."""
 
+from __future__ import annotations
 
-from .InputLayer import inputHandler as ih
-import pathlib as path
 import os
+import pathlib as path
+
+try:  # Package-relative imports when executed via ``python -m Project.src.main.App``
+    from .EncoderLayer import SDR
+    from .InputLayer import inputHandler as ih
+except ImportError:  # Fallback for running ``python Project/src/main/App.py`` directly
+    if __package__ is None or __package__ == "":
+        import sys
+        PROJECT_PACKAGE_PARENT = path.Path(__file__).resolve().parents[3]
+        sys.path.append(str(PROJECT_PACKAGE_PARENT))
+        from Project.src.main.EncoderLayer import SDR  # type: ignore[no-redef]
+        from Project.src.main.InputLayer import inputHandler as ih  # type: ignore[no-redef]
+    else:
+        raise
+
 
 
 ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
 
 DATA_PATH = ROOT_PATH / "Data"
 
-"""Driver code to test InputHandler functionality."""
 
-
-def main():
+def main() -> None:
     """Main function to demonstrate InputHandler usage."""
-    # Create an instance of InputHandler
-    handler = ih.InputHandler()
+    # Create an SDR instance demoing the encoder layer
+    sdr_test = SDR([50, 50])
+    sdr_test.set_sparse([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48])
+    print("SDR Test:", sdr_test)
 
-    # Set some raw data, will need more abstraction later
-    data_set = handler.load_data(os.path.join(DATA_PATH, "concat_ESData.xlsx"))
+    
 
-    print("Raw Data Loaded.", type(data_set), "\n", DATA_PATH)
 
-    # Explicitly convert raw data to DataFrame
-    data_frame = handler.to_dataframe(data_set)
 
-    handler.fill_missing_values(data_frame)
 
-    print("Data Frame Created.", type(data_frame), "\n", data_frame.head())
-    print("Data Validation:", handler.validate_data())
 
 
 if __name__ == "__main__":
