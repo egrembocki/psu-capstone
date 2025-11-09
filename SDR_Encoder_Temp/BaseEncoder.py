@@ -1,3 +1,4 @@
+"""Utilities for defining abstract SDR encoders compatible with pdoc."""
 from abc import ABC, abstractmethod
 from SDR import SDR
 from typing import List
@@ -5,18 +6,17 @@ from typing import List
 
 class BaseEncoder(ABC):
     """
-    Abstract base class for implementing an encoder that converts input values into
-    Sparse Distributed Representations (SDRs). This class provides the foundational
-    functionality for managing the dimensions and size of the encoded outputs but
-    leaves the implementation of the actual encoding process as an abstract method.
+    Abstract base class for converting inputs into Sparse Distributed Representations (SDRs).
+
+    Attributes:
+        _dimensions (List[int]): Dimensions of the encoded SDR output.
+        _size (int): Total number of bits produced by the encoder.
     """
     def __init__(self):#, dimensions: List[int] = None
         """
-        Initialize the BaseEncoder with optional dimensions.
+        Initialize the encoder metadata to empty defaults.
 
-        Args:
-            dimensions (List[int], optional): The dimensions of the encoded SDR output.
-                If provided, the `initialize` method will be called to configure the encoder.
+        Subclasses can configure the concrete dimensions later via :meth:`initialize`.
 
         Attributes:
             _dimensions (List[int]): List of integers representing the shape of the
@@ -26,61 +26,63 @@ class BaseEncoder(ABC):
         self._dimensions: List[int] = []
         self._size: int = 0
 
-        #if dimensions is not None:
+        # if dimensions is not None:
         #    self.initialize(dimensions)
 
     @property
     def dimensions(self) -> List[int]:
         """
-        Get the dimensions of the encoded SDR output.
+        Return the current SDR output dimensions.
 
         Returns:
-            List[int]: A list representing the dimensions (shape) of the encoded SDR.
+            List[int]: Dimensions representing the shape of the encoded SDR.
         """
         return self._dimensions
 
     @property
     def size(self) -> int:
         """
-        Get the total size (number of bits) of the encoded SDR output.
+        Return the total number of bits in the encoded SDR.
 
         Returns:
-            int: The total number of bits in the encoded SDR.
+            int: Total bit count of the encoded SDR.
         """
         return self._size
 
     def initialize(self, dimensions: List[int]):
         """
-        Configure the encoder using a list of dimensions.
-
-        This method sets the dimensions and calculates the total size of the
-        Sparse Distributed Representation (SDR) based on these dimensions.
+        Configure the encoder with the provided dimensions.
 
         Args:
-            dimensions (List[int]): A list of integers representing the shape of the SDR output.
+            dimensions (List[int]): Shape of the SDR output.
+
+        Returns:
+            None
         """
         self._dimensions = list(dimensions)
         self._size = SDR(dimensions).size
 
     def reset(self):
         """
-        Reset the encoder's state.
+        Reset any subclass-specific internal state.
+
+        Subclasses can override this to clear caches or running statistics.
         """
         pass
 
     @abstractmethod
     def encode(self, input_value, output):
         """
-        Abstract method to encode an input value into an SDR.
-
-        Subclasses must implement this method to define how an input value is transformed
-        into a Sparse Distributed Representation (SDR).
+        Encode an input value into the provided SDR container.
 
         Args:
-            input_value: The input data to be encoded.
-            output: The SDR object where the encoded result is stored.
+            input_value: Data to be encoded.
+            output: SDR instance that receives the encoded bits.
+
+        Returns:
+            None
 
         Raises:
-            NotImplementedError: If this method is not implemented by the subclass.
+            NotImplementedError: Always, to enforce subclass implementation.
         """
         raise NotImplementedError("Subclasses must implement this method")
