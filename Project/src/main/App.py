@@ -1,8 +1,8 @@
-"""Main application module to test InputHandler and SDR functionality."""
+#C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
 
 from __future__ import annotations
 
-import os
+import InputLayer.inputHandler as ih
 import pathlib as path
 
 try:  # Package-relative imports when executed via ``python -m Project.src.main.App``
