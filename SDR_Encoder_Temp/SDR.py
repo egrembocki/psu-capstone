@@ -1,6 +1,7 @@
 from typing import List
 
 class SDR:
+
     def __init__(self, dimensions: list[int]):
         self.size = 1
         self.dimensions_ = dimensions

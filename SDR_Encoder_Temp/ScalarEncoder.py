@@ -5,23 +5,94 @@ from dataclasses import dataclass
 import math
 import numpy as np
 
+"""
+Define the ScalarEncoder class
+"""
 @dataclass
 class ScalarEncoderParameters:
-    minimum: float
-    maximum: float
-    clipInput: bool
-    periodic: bool
-    category: bool
-    activeBits: int
-    sparsity: float
-    memberSize: int
-    radius: float
-    resolution: float
+    """
+        A configuration class for defining the parameters of a ScalarEncoder.
+
+        This class holds all the necessary attributes to manage the configuration
+        of a scalar encoder, which converts scalar values into sparse distributed
+        representations (SDRs).
+
+        Attributes:
+            These four (4) members define the total number of bits in the output:
+                size,
+                radius,
+                category,
+                resolution.
+            These are mutually exclusive and only one of them should be non-zero when
+            constructing the encoder.
+
+            Members "minimum" and "maximum" define the range of the input signal.
+            These endpoints are inclusive.
+
+            Member "clipInput" determines whether to allow input values outside the
+            range [minimum, maximum].
+            If true, the input will be clipped into the range [minimum, maximum].
+            If false, inputs outside of the range will raise an error.
+
+            Member "periodic" controls what happens near the edges of the input
+            range.
+
+            If true, then the minimum & maximum input values are the same and the
+            first and last bits of the output SDR are adjacent.  The contiguous
+            block of 1's wraps around the end back to the beginning.
+
+            If false, then minimum & maximum input values are the endpoints of the
+            input range, are not adjacent, and activity does not wrap around.
+
+            Member "category" means that the inputs are enumerated categories.
+            If true then this encoder will only encode unsigned integers, and all
+            inputs will have unique / non-overlapping representations.
+
+            Member "activeBits" is the number of true bits in the encoded output SDR.
+            The output encodings will have a contiguous block of this many 1's.
+
+            Member "sparsity" is an alternative way to specify the member "activeBits".
+            Sparsity requires that the size to also be specified.
+            Specify only one of: activeBits or sparsity.
+
+            Member "size" is the total number of bits in the encoded output SDR.
+
+            Member "radius" Two inputs separated by more than the radius have
+            non-overlapping representations. Two inputs separated by less than the
+            radius will in general overlap in at least some of their bits. You can
+            think of this as the radius of the input.
+
+            Member "resolution" Two inputs separated by greater than, or equal to the
+            resolution are guaranteed to have different representations.
+    """
+    minimum: float = 0.0
+    maximum: float = 0.0
+    clipInput: bool = False
+    periodic: bool = False
+    category: bool = False
+    activeBits: int = 0
+    sparsity: float = 0.0
+    memberSize: int = 0
+    radius: float = 0.0
+    resolution: float = 0.0
 
 class ScalarEncoder(BaseEncoder):
+    """
+    Encodes a real number as a contiguous block of 1's.
+            Description:
+            The ScalarEncoder encodes a numeric (floating point) value into an array
+            of bits. The output is 0's except for a contiguous block of 1's. The
+            location of this contiguous block varies continuously with the input value.
+    """
+    def __init__(self, parameters: ScalarEncoderParameters):
+        """
+            Initializes a ScalarEncoder instance using the provided parameters.
 
-    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
-        super().__init__(dimensions)
+            Args:
+                params (ScalarEncoderParameters): An instance of `ScalarEncoderParameters`
+                                                   containing the configuration for this encoder.
+        """
+        super().__init__()
         parameters = self.check_parameters(parameters)
 
         self.minimum = parameters.minimum
@@ -36,6 +107,22 @@ class ScalarEncoder(BaseEncoder):
         self.resolution = parameters.resolution
 
     def encode(self, input_value: float, output: SDR) -> None:
+        """
+            Encodes a scalar input value into a sparse distributed representation (SDR).
+
+            This method processes a single scalar value, applies the encoding logic,
+            and generates the corresponding sparse binary array.
+
+            Args:
+                inputValue (float): The scalar value to encode.
+
+            Returns:
+                list[int]: A binary sparse representation (SDR) of the input value.
+
+            Raises:
+                ValueError: If the input value is outside the valid range and clipping
+                            is disabled and `clipInput` is set to False.
+        """
         assert output.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
@@ -73,6 +160,17 @@ class ScalarEncoder(BaseEncoder):
 
 #After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
+        """
+                Validates the parameters of the encoder.
+
+                Ensures that all parameters meet the expected constraints and
+                raises errors for invalid configurations. This includes checking
+                proper ranges, sparsity requirements, and consistency between attributes.
+
+                Raises:
+                    ValueError: If one or more parameter values are invalid.
+        """
+
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([
             parameters.activeBits >0,
