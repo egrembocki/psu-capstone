@@ -30,7 +30,14 @@ def main() -> None:
     # Create an SDR instance demoing the encoder layer
     sdr_test = SDR([50, 50])
     sdr_test.set_sparse([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48])
-    print("SDR Test:", sdr_test)
+    print("SDR Sparse Test:", sdr_test)
+
+    sdr_test_dense = SDR([2,2])
+    sdr_test_dense.set_dense([0, 0,1,1])
+    print("SDR Dense Test:", sdr_test_dense)
+
+
+    
 
     
 
