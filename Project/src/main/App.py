@@ -1,8 +1,16 @@
 
+from __future__ import annotations
+
+import sys
+from pathlib import Path
 from datetime import datetime
 
-from ....SDR_Encoder_Temp.SDR import SDR
-from ....SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+
+from SDR_Encoder_Temp.SDR import SDR
+from SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
 
 
 if __name__ == "__main__":

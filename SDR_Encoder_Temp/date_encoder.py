@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import List, Dict, Set, Union
 
 from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
-from SDR import SDR
-from .ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
+from SDR_Encoder_Temp.SDR import SDR
+from SDR_Encoder_Temp.ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
 from dataclasses import dataclass, field
 
 
