@@ -1,4 +1,5 @@
 
+import datetime
 import pandas as pd
 import numpy as np
 import os
@@ -14,28 +15,41 @@ class InputHandler:
 
     """
     _instance = None
-    """The single instance of the InputHandler class."""
-    
-    _data: Union[pd.DataFrame, list] = pd.DataFrame()
-    """The input data of any type."""
 
-    _hyperparameters: dict = {}
-    """The hyperparameters associated with the input data."""
+    def __new__(cls) -> 'InputHandler':
+        """Constructor -- Singleton pattern implementation."""
+
+        if cls._instance is None:
+            cls._instance = super(InputHandler, cls).__new__(cls)
+        
+        return cls._instance
+    
+
+    def __init__(self):
+        """Initialize the InputHandler singleton."""
+
+        self._instance = None
+        """The singleton instance."""
+
+        self._data = pd.DataFrame()
+        """The input data of any type."""
   
     # Getters, maybe use properties later
-    def get_data(self) -> Union[pd.DataFrame, list]:
+    def get_data(self) -> pd.DataFrame:
         """ Getter for the data attribute """
-        return self._data
-    
-    def get_hyperparameters(self) -> dict:
-        """ Getter for the hyperparameters attribute """
-        return self._hyperparameters
-   
+        return pd.DataFrame(self._data)
+     
 
    # main methods to handle input data processing
 
     def load_data(self, filepath: str) -> pd.DataFrame:
         """ Load data from a file with padas based on file extension. This will automatically create a dataframe."""
+
+        assert os.path.exists(filepath), f"The file {filepath} does not exist."
+        assert isinstance(filepath, str), "Filepath must be a string."
+        assert len(filepath) > 0, "Filepath cannot be empty."
+        assert isinstance(self, InputHandler), "load_data must be called on an InputHandler instance."
+
 
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"The file {filepath} does not exist.")
@@ -64,7 +78,7 @@ class InputHandler:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
 
-    def to_dataframe(self, data: Union[pd.DataFrame, list]) -> pd.DataFrame:
+    def to_dataframe(self, data: Union[pd.DataFrame, list, bytearray, np.ndarray]) -> pd.DataFrame:
         """ Explicitly convert input data to a pandas DataFrame """
 
         # Placeholder implementation; actual conversion logic will depend on data type 
@@ -74,26 +88,59 @@ class InputHandler:
             print("Data is already a DataFrame.")
             return data
         elif isinstance(data, list):
-            print("Converting data to DataFrame.")
-            
+            print("Converting data to DataFrame.")    
+            return pd.DataFrame(data)
+        elif isinstance(data, bytearray):
+            print("Converting bytearray to DataFrame.")
+            return pd.DataFrame(list(data))
+        elif isinstance(data, np.ndarray):
+            print("Converting numpy array to DataFrame.")
             return pd.DataFrame(data)
         else:
-            raise TypeError("Unsupported data type for conversion to DataFrame.") 
+            raise TypeError("Unsupported data type for conversion to DataFrame.")
 
-    def raw_to_sequence(self) -> list:
-        """ Convert raw data to sequence (list) """
-
-        # Placeholder implementation; actual conversion logic will depend on data type 
-        # could be list, numpy array, pandas series, etc.
-
-        if isinstance(self._data, list):
-            return self._data
+    def raw_to_sequence(self, data: Union[list, bytearray, np.ndarray]) -> list:
+        """Convert raw data to a normalized sequence list with guaranteed date metadata."""
+        
+        if isinstance(data, np.ndarray):
+            iterable = data.tolist()
+        elif isinstance(data, (bytearray, bytes)):
+            iterable = list(data)
+        elif isinstance(data, list):
+            iterable = data[:]
         else:
-            # simple conversion to list, more logic is needed based on what the data is
-            return [self._data] 
-   
-   
-    
+            raise TypeError("Unsupported data type for conversion to sequence.")
+
+        sequence: list = []
+        contains_date = False
+
+        for item in iterable:
+            normalized, is_date = self._normalize_datetime_entry(item)
+            sequence.append(normalized)
+            if is_date:
+                contains_date = True
+
+        if not contains_date:
+            sequence.insert(0, datetime.datetime.now().isoformat())
+
+        return sequence
+
+    def _normalize_datetime_entry(self, value: object) -> tuple[object, bool]:
+        """Normalize datetime-like values to ISO strings and report detection."""
+        if isinstance(value, datetime.datetime):
+            return value.isoformat(), True
+        if isinstance(value, datetime.date):
+            return datetime.datetime.combine(value, datetime.time()).isoformat(), True
+        if isinstance(value, pd.Timestamp):
+            return value.to_pydatetime().isoformat(), True
+        if isinstance(value, str):
+            try:
+                parsed = datetime.datetime.fromisoformat(value)
+                return parsed.isoformat(), True
+            except ValueError:
+                return value, False
+        return value, False
+
     ## validation methods
 
     def validate_data(self) -> bool:
@@ -116,11 +163,4 @@ class InputHandler:
         # Add more cases as needed for different data types
         
 
-    def __new__(cls, *args, **kwargs):
-        """Constructor -- Singleton pattern implementation."""
-
-        if cls._instance is None:
-            cls._instance = super(InputHandler, cls).__new__(cls)
-        
-        return cls._instance
-
+    
