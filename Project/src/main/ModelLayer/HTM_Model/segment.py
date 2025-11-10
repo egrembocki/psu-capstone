@@ -1,11 +1,13 @@
 # htm_core/segment.py
 from __future__ import annotations
 
-from typing import List, Optional, Set
+from typing import List, Optional, Set, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .cell import Cell
 
 from .constants import CONNECTED_PERM
 from .distal_synapse import DistalSynapse
-from .cell import Cell
 
 
 class Segment:
