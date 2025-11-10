@@ -1,10 +1,7 @@
 
-import ....SDR_Encoder_Temp. as DateEncoder
-
-
-
-
-
+from datetime import datetime
+from SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
+from SDR_Encoder_Temp.SDR import SDR
 
 if __name__ == "__main__":
     params = DateEncoderParameters(
@@ -17,10 +14,10 @@ if __name__ == "__main__":
         custom_days=["mon,wed,fri"],
         verbose=True,
     )
-
-    enc = DateEncoder(params)
-
-    out = SDR(dimensions=[enc.size])
-    enc.encode(time.time(), out)  # current time
+    
+    date_test = DateEncoder(parameters=params)
+    
+    out = SDR(dimensions=[date_test.size])
+    date_test.encode(datetime.now(), out)  # current time
     print("Output size:", out.size)
     print("Active indices:", out.getSparse())

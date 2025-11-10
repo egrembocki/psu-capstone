@@ -7,12 +7,12 @@ from typing import List, Dict, Set, Union
 
 from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 from SDR import SDR
-from .ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
+from SDR_Encoder_Temp.ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
 from dataclasses import dataclass, field
 
 
 @dataclass
-class DateEncoderParameters(BaseEncoder):
+class DateEncoderParameters:
     """Parameters for DateEncoder."""
     # Season: day of year (0..366), default radius 91.5 days (~4 seasons)
     season_width: int = 0
