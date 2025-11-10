@@ -1,37 +1,35 @@
+# htm_core/demo.py
+"""Demo application for Spatial Pooler and Temporal Memory integration."""
+
+from __future__ import annotations
+
+import numpy as np
+from ModelLayer.HTM_Model.spatial_pooler import SpatialPooler
+from ModelLayer.HTM_Model.temporal_memory import TemporalMemory
 
 
+def main() -> None:
+    input_space_size = 100
+    column_count = 256
+    cells_per_column = 8
+    initial_synapses_per_column = 20
+    steps = 5
+    inhibition_radius = 10.0
 
-import InputLayer.InputHandler as ih
-#import EncoderLayer.Sdr as sdr
-import pathlib as path
-import os
+    sp = SpatialPooler(input_space_size, column_count, initial_synapses_per_column)
+    tm = TemporalMemory(sp.columns, cells_per_column)
 
+    for t in range(steps):
+        input_vector = np.random.randint(2, size=input_space_size)
+        mask, active_cols = sp.compute_active_columns(input_vector, inhibition_radius)
+        tm.step(active_cols)
 
-ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
+        if t == 0:
+            # Example: run one SP learning step at t=0
+            sp.learning_phase(active_cols, input_vector)
 
-DATA_PATH = ROOT_PATH / "Data"
+    print("SP + TM demo completed.")
 
-"""Driver code to test InputHandler functionality."""
-
-def main():
-    """Main function to demonstrate InputHandler usage."""
-    # Create an instance of InputHandler
-    handler = ih.InputHandler()
-    
-    # Set some raw data, will need more abstraction later
-    data_set = handler.load_data(os.path.join(DATA_PATH, "concat_ESData.xlsx"))
-
-    print("Raw Data Loaded.", type(data_set), "\n", DATA_PATH)
-
-    # Explicitly convert raw data to DataFrame
-    data_frame = handler.to_dataframe(data_set)
-
-    handler.fill_missing_values(data_frame)
-
-    print("Data Frame Created.", type(data_frame), "\n", data_frame.head())
-    print("Data Validation:", handler.validate_data())
-    print(data_frame.info())
 
 if __name__ == "__main__":
-      
     main()

@@ -1,20 +1,21 @@
-"""cell class for HTM model layer"""
+"""cell: defines the Cell class used in HTM Model."""
 
+# htm_core/cell.py
+from __future__ import annotations
 
+from typing import List
 from .segment import Segment
 
 
 class Cell:
-    """Cell class for HTM model layer -- represents a single cell in a column"""
+    """Single cell within a column.
 
-    _segments: list[Segment]
+    Holds a list of distal segments used for Temporal Memory.
+    """
 
-    def __init__(self):
-        self._active_state = False
-        self._predictive_state = False
-        self._segments = []
+    def __init__(self) -> None:
+        # Filled by Temporal Memory: list of Segment objects
+        self.segments: List[Segment] = []
 
     def __repr__(self) -> str:
-        return (f"Cell(active_state={self._active_state}, "
-                f"predictive_state={self._predictive_state}, "
-                f"segments={self._segments})")
+        return f"Cell(id={id(self)})"
