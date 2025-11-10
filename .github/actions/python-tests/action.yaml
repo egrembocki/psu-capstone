@@ -86,7 +86,7 @@ runs:
 
     - name: Detect Package Manager
       id: detect_package_manager
-      uses: egrembocki/psu-capstone/.github/actions/python-detect-package-manager.yaml@main
+      uses: egrembocki/psu-capstone/.github/actions/python-detect-package-manager@main
       with:
         package_manager: ${{ inputs.package_manager }}
         project_path: '.'
