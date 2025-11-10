@@ -1,3 +1,4 @@
+"""Date-based SDR encoders that decompose calendar features for hierarchical models."""
 from dataclasses import dataclass, field
 from math import ceil
 from time import mktime
@@ -12,6 +13,23 @@ from SDR_Encoder_Temp.SDR import SDR
 
 @dataclass
 class DateEncoderParameters:
+    """
+    Container for the individual feature encoders that compose the DateEncoder.
+
+    Attributes:
+        custom_dates (List[str]): Calendar labels or shorthand days flagged as custom.
+        season_width (int): Number of active bits for the seasonal encoder.
+        season_radius (float): Overlap radius controlling seasonal generalization.
+        dayOfWeek_width (int): Active bits for the day-of-week encoder.
+        dayOfWeek_radius (float): Overlap radius for day-of-week buckets.
+        weekend_width (int): Active bits for the weekend/weekday encoder.
+        holiday_width (int): Active bits for holiday detection.
+        holiday_dates (List[int]): Numeric descriptors for holidays to highlight.
+        timeOfDay_width (int): Active bits for the time-of-day encoder.
+        timeOfDay_radius (float): Overlap radius for time-of-day buckets.
+        custom_width (int): Active bits for the custom-day encoder.
+        verbose (bool): When True, prints diagnostics during configuration and encoding.
+    """
     custom_dates: List[str]
     season_width: int = 0
     season_radius: float = 91.5
@@ -26,8 +44,20 @@ class DateEncoderParameters:
     verbose: bool = False
 
 class DateEncoder(BaseEncoder):
-    def __init__(self, parameters: DateEncoderParameters):
+    """
+    Composite encoder that projects datetime features into multiple SDR sub-encoders.
 
+    Each configured sub-encoder (season, day-of-week, weekend, holidays, custom days,
+    and time-of-day) contributes a contiguous slice to the final SDR.
+    """
+    def __init__(self, parameters: DateEncoderParameters):
+        """
+        Create the component encoders defined by the supplied parameters.
+
+        Args:
+            parameters (DateEncoderParameters): Tunable widths, radii, and calendar
+                selections used to build the composite encoder.
+        """
         super().__init__()
         self.dayOfWeek_encoder = None
         self.season_encoder = None
@@ -53,6 +83,16 @@ class DateEncoder(BaseEncoder):
         self.verbose = parameters.verbose
 
     def encode(self, input_value, output):
+        """
+        Populate ``output`` with the concatenated SDR for the provided datetime.
+
+        Args:
+            input_value (datetime): Timestamp whose calendar features are encoded.
+            output (SDR): Preallocated SDR receiving the merged sub-encoder bits.
+
+        Returns:
+            SDR: The updated SDR containing all activated feature slices.
+        """
         sdrs = []
         season_output: SDR
         day_of_week_output: SDR
@@ -113,6 +153,16 @@ class DateEncoder(BaseEncoder):
         pass
 
     def check_parameters(self, parameters: DateEncoderParameters):
+        """
+        Validate parameters and initialize each active scalar encoder.
+
+        Args:
+            parameters (DateEncoderParameters): Candidate configuration supplied to
+                the encoder constructor.
+
+        Returns:
+            DateEncoderParameters: The sanitized parameter set stored on the instance.
+        """
         args = parameters
         size = 0
         bucket_map = {}
