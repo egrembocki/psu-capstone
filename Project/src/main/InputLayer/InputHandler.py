@@ -85,26 +85,26 @@ class InputHandler:
     ) -> pd.DataFrame:
         """Explicitly convert input data to a pandas DataFrame"""
 
-        # Placeholder implementation; actual conversion logic will depend on data type
-        # the main goal is to get the dataset to list first for easy pandas conversion
-        #  to DataFrame
+        temp_data: pd.DataFrame
 
         if isinstance(data, pd.DataFrame):
             print("Data is already a DataFrame.")
-            return data
+            temp_data = data
         elif isinstance(data, list):
             print("Converting data to DataFrame.")
-            return pd.DataFrame(data)
+            temp_data = pd.DataFrame(data)
         elif isinstance(data, bytearray):
             print("Converting bytearray to DataFrame.")
-            return pd.DataFrame(list(data))
+            temp_data = pd.DataFrame(list(data))
         elif isinstance(data, np.ndarray):
             print("Converting numpy array to DataFrame.")
-            return pd.DataFrame(data)
+            temp_data = pd.DataFrame(data)
         else:
             raise TypeError("Unsupported data type for conversion to DataFrame.")
+        self._fill_missing_values(temp_data)
+        return temp_data
 
-    def raw_to_sequence(self, data: Union[list, bytearray, np.ndarray]) -> list:
+    def raw_to_sequence(self, data: Union[list, bytearray, bytes, np.ndarray, str]) -> list:
         """Convert raw data to a normalized sequence list with guaranteed date metadata."""
 
         if isinstance(data, np.ndarray):
@@ -113,6 +113,8 @@ class InputHandler:
             iterable = list(data)
         elif isinstance(data, list):
             iterable = data[:]
+        elif isinstance(data, str):
+            iterable = [data]
         else:
             raise TypeError("Unsupported data type for conversion to sequence.")
 
@@ -146,21 +148,7 @@ class InputHandler:
                 return value, False
         return value, False
 
-    # validation methods
-
-    def validate_data(self) -> bool:
-        """Validate the input data"""
-
-        # Placeholder implementation; actual validation logic will depend on data
-        #  type and requirements
-
-        is_valid = isinstance(
-            self._data, (pd.DataFrame, list, np.ndarray, pd.Series, dict, str)
-        )
-
-        return is_valid
-
-    def fill_missing_values(self, data: pd.DataFrame) -> None:
+    def _fill_missing_values(self, data: pd.DataFrame) -> None:
         """Fill missing values in the input data"""
 
         # Placeholder implementation; actual logic will depend on data type and requirements
@@ -169,3 +157,16 @@ class InputHandler:
             data.fillna(data.mean(numeric_only=True), inplace=True)
 
         # Add more cases as needed for different data types
+
+    # validation methods
+
+    def validate_data(self) -> bool:
+        """Validate the input data"""
+
+        assert isinstance(
+            self._data, pd.DataFrame
+        ), "Data is not a DataFrame."
+        if self._data.empty:
+            print("DataFrame is empty.")
+            return False
+        return True  # Data is valid if not empty
