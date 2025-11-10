@@ -24,11 +24,6 @@ on:
         required: false
         default: '["3.10", "3.11", "3.12", "3.13"]'
         type: string
-      timeout_minutes:
-        description: 'Job timeout in minutes'
-        required: false
-        default: 15
-        type: number
       fail_fast:
         description: 'Fail fast on matrix failures'
         required: false
@@ -39,11 +34,6 @@ on:
         required: false
         default: '--group dev --group tests --group linters --group formatters'
         type: string
-      fail_on_lint:
-        description: 'Fail the run if lint fails'
-        required: false
-        default: true
-        type: boolean
       source_path:
         description: 'Path to the source code directory'
         required: false
@@ -64,11 +54,6 @@ on:
         required: false
         default: false
         type: boolean
-      fail_on_fmt:
-        description: 'Fail run if formatting check fails'
-        required: false
-        default: true
-        type: boolean
       pytest_args:
         description: 'Additional pytest args'
         required: false
@@ -84,11 +69,6 @@ on:
         required: false
         default: false
         type: boolean
-      artifact_retention_days:
-        description: 'Number of days to retain uploaded artifacts'
-        required: false
-        default: 7
-        type: number
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -115,7 +95,7 @@ jobs:
     name: Lint & Test (Python ${{ matrix.python-version }})
     needs: setup
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout-minutes }}
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: write
@@ -149,7 +129,7 @@ jobs:
         with: 
           # Use configuration from pyproject.toml
           flake8_args: ""
-          fail_on_error: ${{ inputs.fail_on_lint }}
+          fail_on_error: true
           source_path: ${{ inputs.source_path }}
           mypy_enabled: ${{ inputs.mypy_enabled }}
           pydoc_lint_enabled: ${{ inputs.pydocstyle_enabled }}
@@ -162,7 +142,7 @@ jobs:
           # Use configuration from pyproject.toml
           isort_args: ""
           black_args: ""
-          fail_on_error: ${{ inputs.fail_on_fmt }}
+          fail_on_error: true
           source_path: ${{ inputs.source_path }}
           ruff_enabled: ${{ inputs.ruff_enabled }}
       
@@ -182,7 +162,7 @@ jobs:
           name: test-results-python-${{ matrix.python-version }}
           path: |
             pytest-results.xml
-          retention-days: ${{ inputs.artifact_retention_days }}
+          retention-days: 14
 
       - name: Upload coverage report
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
@@ -191,4 +171,4 @@ jobs:
           name: test-coverage-report
           path: |
             coverage.xml
-          retention-days: ${{ inputs.artifact_retention_days }}
+          retention-days: 14
