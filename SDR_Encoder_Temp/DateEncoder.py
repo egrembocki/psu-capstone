@@ -124,7 +124,7 @@ class DateEncoder(BaseEncoder):
                 val = 1.0
             else:
                 val = 0.0
-            weekend_output = SDR(self.weekendEncoder.dimensions)
+            weekend_output = SDR(self.weekendEncoder.dimensions) 
             weekend_output = self.weekendEncoder.encode(val, weekend_output)
             #another bucket thing here
             print(f" weekend: {val} ==> {weekend_output}")

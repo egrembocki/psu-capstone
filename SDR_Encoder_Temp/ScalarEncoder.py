@@ -69,12 +69,12 @@ class ScalarEncoderParameters:
     """
     minimum: float = 0.0
     maximum: float = 0.0
-    clipInput: bool = False
+    clip_input: bool = False
     periodic: bool = False
     category: bool = False
-    activeBits: int = 0
+    active_bits: int = 0
     sparsity: float = 0.0
-    memberSize: int = 0
+    member_size: int = 0
     radius: float = 0.0
     resolution: float = 0.0
 
@@ -99,12 +99,12 @@ class ScalarEncoder(BaseEncoder):
 
         self.minimum = parameters.minimum
         self.maximum = parameters.maximum
-        self.clipInput = parameters.clipInput
+        self.clipInput = parameters.clip_input
         self.periodic = parameters.periodic
         self.category = parameters.category
-        self.activeBits = parameters.activeBits
+        self.activeBits = parameters.active_bits
         self.sparsity = parameters.sparsity
-        self._size = parameters.memberSize
+        self._size = parameters.member_size
         self.radius = parameters.radius
         self.resolution = parameters.resolution
 
@@ -118,6 +118,7 @@ class ScalarEncoder(BaseEncoder):
         Args:
             input_value (float): The scalar value to encode.
             output (SDR): Destination SDR that receives the activated indices.
+            TODO The c++ version is passing output by reference. Are we accurately modeling that?
 
         Returns:
             None
@@ -139,9 +140,8 @@ class ScalarEncoder(BaseEncoder):
                 input_value = max(input_value, self.minimum)
                 input_value = min(input_value, self.maximum)
         else:
-            if self.category:
-                if input_value != float(int(input_value)):
-                    raise ValueError("Input to category encoder must be an unsigned integer!")
+            if self.category and input_value != float(int(input_value)):
+                raise ValueError("Input to category encoder must be an unsigned integer!")
             if not (self.minimum <= input_value <= self.maximum):
                 raise ValueError(
                     f"Input must be within range [{self.minimum}, {self.maximum}]! "
@@ -164,6 +164,8 @@ class ScalarEncoder(BaseEncoder):
 #After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
         """
+        TODO CCG is too High - SonarQube is flagging this method as too complex.
+        
         Validate encoder parameters and derive dependent configuration values.
 
         Ensures that all parameters meet the expected constraints and raises errors for
@@ -184,13 +186,13 @@ class ScalarEncoder(BaseEncoder):
 
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([
-            parameters.activeBits >0,
+            parameters.active_bits >0,
             parameters.sparsity >0.0
         ])
         assert num_active_args != 0, "Missing argument, need one of: 'activeBits', 'sparsity'."
         assert num_active_args == 1, "Specified both: 'activeBits', 'sparsity'. Specify only one of them."
         num_size_args = sum([
-            parameters.memberSize > 0,
+            parameters.member_size > 0,
             parameters.radius > 0.0,
             bool(parameters.category),
             parameters.resolution > 0.0
@@ -198,9 +200,9 @@ class ScalarEncoder(BaseEncoder):
         assert num_size_args != 0, "Missing argument, need one of: 'size', 'radius', 'resolution', 'category'."
         assert num_size_args == 1, "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them."
         if parameters.periodic:
-            assert not parameters.clipInput, "Will not clip periodic inputs.  Caller must apply modulus."
+            assert not parameters.clip_input, "Will not clip periodic inputs.  Caller must apply modulus."
         if parameters.category:
-            assert not parameters.clipInput, "Incompatible arguments: category & clipInput."
+            assert not parameters.clip_input, "Incompatible arguments: category & clipInput."
             assert not parameters.periodic, "Incompatible arguments: category & periodic."
             assert parameters.minimum == float(int(parameters.minimum)), "Minimum input value of category encoder must be an unsigned integer!"
             assert parameters.maximum == float(int(parameters.maximum)), "Maximum input value of category encoder must be an unsigned integer!"
@@ -210,39 +212,38 @@ class ScalarEncoder(BaseEncoder):
             args.radius = 1.0
         if args.sparsity:
             assert 0.0 <= args.sparsity <= 1.0
-            assert args.memberSize > 0, "Argument 'sparsity' requires that the 'size' also be given."
-            args.activeBits = round(args.memberSize * args.sparsity)
-            assert args.activeBits > 0, "sparsity and size must be given so that sparsity * size > 0!"
+            assert args.member_size > 0, "Argument 'sparsity' requires that the 'size' also be given."
+            args.active_bits = round(args.member_size * args.sparsity)
+            assert args.active_bits > 0, "sparsity and size must be given so that sparsity * size > 0!"
         if args.periodic:
-            extentWidth = args.maximum - args.minimum
+            extent_width = args.maximum - args.minimum
         else:
-            maxInclusive = math.nextafter(args.maximum, math.inf)
-            extentWidth = maxInclusive - args.minimum
-        if args.memberSize > 0:
+            max_inclusive = math.nextafter(args.maximum, math.inf)
+            extent_width = max_inclusive - args.minimum
+        if args.member_size > 0:
             if args.periodic:
-                args.resolution = extentWidth / args.memberSize
+                args.resolution = extent_width / args.member_size
             else:
-                nBuckets = args.memberSize - (args.activeBits -1)
-                args.resolution = extentWidth / (nBuckets-1)
+                n_buckets = args.member_size - (args.active_bits -1)
+                args.resolution = extent_width / (n_buckets-1)
         else:
             if args.radius > 0.0:
-                args.resolution = args.radius / args.activeBits
+                args.resolution = args.radius / args.active_bits
 
-            neededBands = math.ceil(extentWidth / args.resolution)
+            needed_bands = math.ceil(extent_width / args.resolution)
             if args.periodic:
-                args.memberSize = neededBands
+                args.member_size = needed_bands
             else:
-                args.memberSize = neededBands + (args.activeBits - 1)
-
+                args.member_size = needed_bands + (args.active_bits - 1)
         # Sanity check the parameters.
-        assert args.memberSize > 0
-        assert args.activeBits > 0
-        assert args.activeBits < args.memberSize
+        assert args.member_size > 0
+        assert args.active_bits > 0
+        assert args.active_bits < args.member_size
 
-        args.radius = args.activeBits * args.resolution
+        args.radius = args.active_bits * args.resolution
         assert args.radius > 0
 
-        args.sparsity = args.activeBits / float(args.memberSize)
+        args.sparsity = args.active_bits / float(args.member_size)
         assert args.sparsity > 0
         return args
 
@@ -251,12 +252,12 @@ class ScalarEncoder(BaseEncoder):
 params = ScalarEncoderParameters(
     minimum = 0,
     maximum = 100,
-    clipInput = False,
+    clip_input = False,
     periodic = False,
     category = False,
-    activeBits = 21,
+    active_bits = 21,
     sparsity = 0,
-    memberSize = 500,
+    member_size = 500,
     radius = 0,
     resolution = 0
 )
@@ -272,7 +273,7 @@ encoder2 = ScalarEncoder(params ,dimensions=[100])
 print(encoder2.size)
 print(encoder2.dimensions)'''
 
-encoder3 = ScalarEncoder(params ,dimensions=[params.memberSize])
-output = SDR(dimensions=[params.memberSize])
+encoder3 = ScalarEncoder(params)
+output = SDR(dimensions=[params.member_size])
 encoder3.encode(7.3, output)
 print(output.getSparse())
