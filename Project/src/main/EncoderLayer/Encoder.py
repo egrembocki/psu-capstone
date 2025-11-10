@@ -1,7 +1,5 @@
 from abc import ABC
 
-from ....numenta import htm
-
 """Encoder module :: contains the Encoder class to encode input data."""
 
 

@@ -1,6 +1,5 @@
 """Main application module for the project."""
 
-
 import pathlib as path
 from typing import Tuple
 
@@ -12,10 +11,6 @@ except ImportError:  # Matplotlib is optional during non-visual runs.
     ListedColormap = None  # type: ignore[assignment]
 
 from EncoderLayer.Sdr import SDR
-
-
-
-
 
 
 ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
@@ -91,14 +86,14 @@ def plot_sdrs(*named_sdrs: Tuple[str, SDR]) -> None:
 def main() -> None:
     """Main function to demonstrate InputHandler usage."""
     # Create an SDR instance demoing the encoder layer
-    sdr_one = SDR([10,10])
-    sdr_two = SDR([10,10])
-    sdr_three = SDR([10,10])
-    sdr_cat = SDR([30,10])
+    sdr_one = SDR([10, 10])
+    sdr_two = SDR([10, 10])
+    sdr_three = SDR([10, 10])
+    sdr_cat = SDR([30, 10])
 
-    sdr_one.randomize(.20)
-    sdr_two.randomize(.20)
-    sdr_three.randomize(.20)
+    sdr_one.randomize(0.20)
+    sdr_two.randomize(0.20)
+    sdr_three.randomize(0.20)
 
     print("SDR One:")
     print(sdr_one)
@@ -107,14 +102,12 @@ def main() -> None:
     print("SDR Three:")
     print(sdr_three)
 
-    sdr_cat.concatenate([sdr_two,sdr_one, sdr_three], axis=0)
+    sdr_cat.concatenate([sdr_two, sdr_one, sdr_three], axis=0)
     print("Union of SDR One,SDR Two, and SDR Three:")
     print(sdr_cat)
-    
 
-    sdr_sparse = SDR([32,64])
-    sdr_sparse.randomize(.20)
-    
+    sdr_sparse = SDR([32, 64])
+    sdr_sparse.randomize(0.20)
 
     print("Sparse SDR:")
     print(sdr_sparse)
@@ -126,18 +119,6 @@ def main() -> None:
         ("Union", sdr_cat),
         ("Sparse", sdr_sparse),
     )
-
-
-
-
-
-    
-
-    
-
-
-
-
 
 
 if __name__ == "__main__":
