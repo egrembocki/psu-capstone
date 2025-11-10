@@ -1,5 +1,6 @@
 from typing import List
 
+
 class SDR:
 
     def __init__(self, dimensions: list[int]):
@@ -9,7 +10,7 @@ class SDR:
             self.size *= dim
         self.sparse = []
 
-        #I think we need these for the other types of encoders like RDSE
+        # I think we need these for the other types of encoders like RDSE
         self.dense = []
         self.coordinates = []
         self.dense_valid = False

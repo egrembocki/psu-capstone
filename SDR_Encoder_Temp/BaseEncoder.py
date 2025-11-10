@@ -1,4 +1,5 @@
 """Utilities for defining abstract SDR encoders compatible with pdoc."""
+
 from abc import ABC, abstractmethod
 from SDR import SDR
 from typing import List
@@ -12,7 +13,8 @@ class BaseEncoder(ABC):
         _dimensions (List[int]): Dimensions of the encoded SDR output.
         _size (int): Total number of bits produced by the encoder.
     """
-    def __init__(self):#, dimensions: List[int] = None
+
+    def __init__(self):  # , dimensions: List[int] = None
         """
         Initialize the encoder metadata to empty defaults.
 

@@ -9,43 +9,45 @@ from dataclasses import dataclass
 from typing import List
 from SDR import SDR
 
+
 @dataclass
 class RDSEParameters:
     """
-        Parameters for the RandomDistributedScalarEncoder (RDSE)
+    Parameters for the RandomDistributedScalarEncoder (RDSE)
 
-        Members "activeBits" & "sparsity" are mutually exclusive, specify exactly one
-        of them.
+    Members "activeBits" & "sparsity" are mutually exclusive, specify exactly one
+    of them.
 
-        Members "radius", "resolution", & "category" are mutually exclusive, specify
-        exactly one of them.
+    Members "radius", "resolution", & "category" are mutually exclusive, specify
+    exactly one of them.
 
-        Member "size" is the total number of bits in the encoded output SDR.
+    Member "size" is the total number of bits in the encoded output SDR.
 
-        Member "activeBits" is the number of true bits in the encoded output SDR.
+    Member "activeBits" is the number of true bits in the encoded output SDR.
 
-        Member "sparsity" is the fraction of bits in the encoded output which this
-        encoder will activate. This is an alternative way to specify the member
-        "activeBits".
+    Member "sparsity" is the fraction of bits in the encoded output which this
+    encoder will activate. This is an alternative way to specify the member
+    "activeBits".
 
-        Member "radius" Two inputs separated by more than the radius have
-        non-overlapping representations. Two inputs separated by less than the
-        radius will in general overlap in at least some of their bits. You can
-        think of this as the radius of the input.
+    Member "radius" Two inputs separated by more than the radius have
+    non-overlapping representations. Two inputs separated by less than the
+    radius will in general overlap in at least some of their bits. You can
+    think of this as the radius of the input.
 
-        Member "resolution" Two inputs separated by greater than, or equal to the
-        resolution will in general have different representations.
+    Member "resolution" Two inputs separated by greater than, or equal to the
+    resolution will in general have different representations.
 
-        Member "category" means that the inputs are enumerated categories.
-        If true then this encoder will only encode unsigned integers, and all
-        inputs will have unique / non-overlapping representations.
+    Member "category" means that the inputs are enumerated categories.
+    If true then this encoder will only encode unsigned integers, and all
+    inputs will have unique / non-overlapping representations.
 
-        Member "seed" forces different encoders to produce different outputs, even
-        if the inputs and all other parameters are the same.  Two encoders with the
-        same seed, parameters, and input will produce identical outputs.
+    Member "seed" forces different encoders to produce different outputs, even
+    if the inputs and all other parameters are the same.  Two encoders with the
+    same seed, parameters, and input will produce identical outputs.
 
-        The seed 0 is special.  Seed 0 is replaced with a random number.
+    The seed 0 is special.  Seed 0 is replaced with a random number.
     """
+
     size: int
     activeBits: int
     sparsity: float
@@ -54,26 +56,27 @@ class RDSEParameters:
     category: bool
     seed: int
 
+
 class RandomDistributedScalarEncoder(BaseEncoder):
     """
-        Encodes a real number as a set of randomly generated activations.
+    Encodes a real number as a set of randomly generated activations.
 
-        Description:
-        The RandomDistributedScalarEncoder (RDSE) encodes a numeric scalar (floating
-        point) value into an SDR.  The RDSE is more flexible than the ScalarEncoder.
-        This encoder does not need to know the minimum and maximum of the input
-        range.  It does not assign an input->output mapping at construction.  Instead
-        the encoding is determined at runtime.
+    Description:
+    The RandomDistributedScalarEncoder (RDSE) encodes a numeric scalar (floating
+    point) value into an SDR.  The RDSE is more flexible than the ScalarEncoder.
+    This encoder does not need to know the minimum and maximum of the input
+    range.  It does not assign an input->output mapping at construction.  Instead
+    the encoding is determined at runtime.
 
-        Note: This implementation differs from Numenta's original RDSE.  The original
-        RDSE saved all associations between inputs and active bits for the lifetime
-        of the encoder.  This allowed it to guarantee a good set of random
-        activations which didn't conflict with any previous encoding.  It also allowed
-        the encoder to decode an SDR into the input value which likely created it.
-        This RDSE does not save the association between inputs and active bits.  This
-        is faster and uses less memory.  It relies on the random & distributed nature
-        of SDRs to prevent conflicts between different encodings.  This method does
-        not allow for decoding SDRs into the inputs which likely created it.
+    Note: This implementation differs from Numenta's original RDSE.  The original
+    RDSE saved all associations between inputs and active bits for the lifetime
+    of the encoder.  This allowed it to guarantee a good set of random
+    activations which didn't conflict with any previous encoding.  It also allowed
+    the encoder to decode an SDR into the input value which likely created it.
+    This RDSE does not save the association between inputs and active bits.  This
+    is faster and uses less memory.  It relies on the random & distributed nature
+    of SDRs to prevent conflicts between different encodings.  This method does
+    not allow for decoding SDRs into the inputs which likely created it.
     """
 
     def __init__(self, parameters: RDSEParameters):
@@ -112,7 +115,9 @@ class RandomDistributedScalarEncoder(BaseEncoder):
             return
         if self.category:
             if input_value != int(input_value) or input_value < 0:
-                raise ValueError("Input to category encoder must be an unsigned integer")
+                raise ValueError(
+                    "Input to category encoder must be an unsigned integer"
+                )
 
         data = [0] * self.size
 
@@ -120,23 +125,21 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
         for offset in range(self.activeBits):
             hash_buffer = index + offset
-            bucket = mmh3.hash(struct.pack('I', hash_buffer), self.seed, signed=False)
+            bucket = mmh3.hash(struct.pack("I", hash_buffer), self.seed, signed=False)
             bucket = bucket % self.size
             data[bucket] = 1
 
         output.setDense(data)
-        #output.setSparse(data) #we may need setDense implemented for SDR class
+        # output.setSparse(data) #we may need setDense implemented for SDR class
 
-
-
-#After encode we may need a check_parameters method since most of the encoders have this
+    # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: RDSEParameters):
         """
-            Verifies the validity and consistency of the encoder's parameter configuration.
+        Verifies the validity and consistency of the encoder's parameter configuration.
 
-            Raises:
-                ValueError: If any of the parameters are invalid or inconsistent.
-            """
+        Raises:
+            ValueError: If any of the parameters are invalid or inconsistent.
+        """
         assert parameters.size > 0
 
         num_active_args = 0
@@ -145,8 +148,12 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         if parameters.sparsity > 0:
             num_active_args += 1
 
-        assert num_active_args != 0, "Missing argument, need one of: 'activeBits' or 'sparsity'."
-        assert num_active_args == 1, "Too many arguments, choose only one of: 'activeBits' or 'sparsity'."
+        assert (
+            num_active_args != 0
+        ), "Missing argument, need one of: 'activeBits' or 'sparsity'."
+        assert (
+            num_active_args == 1
+        ), "Too many arguments, choose only one of: 'activeBits' or 'sparsity'."
 
         num_resolution_args = 0
         if parameters.radius > 0:
@@ -156,8 +163,12 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         if parameters.resolution > 0:
             num_resolution_args += 1
 
-        assert num_resolution_args != 0, "Missing argument, need one of: 'radius', 'resolution', 'category'."
-        assert num_resolution_args == 1, "Too many arguments, choose only one of: 'radius', 'resolution', 'category'."
+        assert (
+            num_resolution_args != 0
+        ), "Missing argument, need one of: 'radius', 'resolution', 'category'."
+        assert (
+            num_resolution_args == 1
+        ), "Too many arguments, choose only one of: 'radius', 'resolution', 'category'."
 
         args = parameters
 
@@ -180,15 +191,15 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         return args
 
 
-#Tests
+# Tests
 params = RDSEParameters(
-    size = 1000,
-    activeBits = 0,
-    sparsity = .10,
-    radius = 10,
-    resolution = 0,
-    category = False,
-    seed = 0
+    size=1000,
+    activeBits=0,
+    sparsity=0.10,
+    radius=10,
+    resolution=0,
+    category=False,
+    seed=0,
 )
 encoder = RandomDistributedScalarEncoder(params, dimensions=[params.size])
 output = SDR(dimensions=[params.size])
