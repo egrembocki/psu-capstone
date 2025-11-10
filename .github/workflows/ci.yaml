@@ -102,7 +102,8 @@ jobs:
     
     strategy:
       matrix:
-        python-version: ${{ fromJSON(github.event.inputs.python_versions) }}
+        # python-version: ${{ fromJSON(github.event.inputs.python_versions) }}
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
       fail-fast: ${{ inputs.fail_fast }}
   
     steps:
