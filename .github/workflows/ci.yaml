@@ -106,7 +106,7 @@ jobs:
       
       - name: Lint code
         if: matrix.python-version == needs.setup.outputs.latest-python-version
-        uses: .github/actions/python-lint
+        uses: .github/actions/python-lint@main
         with: 
           # Use configuration from pyproject.toml
           flake8_args: ""
@@ -118,7 +118,7 @@ jobs:
       
       - name: Format check
         if: matrix.python-version == needs.setup.outputs.latest-python-version
-        uses: .github/actions/python-fmt
+        uses: .github/actions/python-fmt@main
         with:
           # Use configuration from pyproject.toml
           isort_args: ""
@@ -128,7 +128,7 @@ jobs:
           ruff_enabled: false
       
       - name: Run tests
-        uses: .github/actions/python-tests
+        uses: .github/actions/python-tests@main
         with:
           install_uv_dependencies: "--group dev --group tests --group linters --group formatters --all-extras"
           pytest_args: '--junitxml=pytest-results.xml'
