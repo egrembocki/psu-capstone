@@ -11,7 +11,7 @@ from __future__ import annotations
 from math import prod
 import random
 from typing import Callable, Iterable, List, Optional, Sequence
-from ..LogLayer.logLevel import nta_assert, nta_check
+from LogLayer.logLevel import nta_assert, nta_check
 
 
 # Type aliases mirroring the C++ implementation

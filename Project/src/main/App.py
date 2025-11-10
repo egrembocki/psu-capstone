@@ -1,22 +1,12 @@
-#C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
+"""Main application module for the project."""
 
-from __future__ import annotations
 
-import InputLayer.inputHandler as ih
 import pathlib as path
 
-try:  # Package-relative imports when executed via ``python -m Project.src.main.App``
-    from .EncoderLayer import SDR
-    from .InputLayer import inputHandler as ih
-except ImportError:  # Fallback for running ``python Project/src/main/App.py`` directly
-    if __package__ is None or __package__ == "":
-        import sys
-        PROJECT_PACKAGE_PARENT = path.Path(__file__).resolve().parents[3]
-        sys.path.append(str(PROJECT_PACKAGE_PARENT))
-        from Project.src.main.EncoderLayer import SDR  # type: ignore[no-redef]
-        from Project.src.main.InputLayer import inputHandler as ih  # type: ignore[no-redef]
-    else:
-        raise
+from EncoderLayer.Sdr import SDR
+
+
+
 
 
 
@@ -28,13 +18,36 @@ DATA_PATH = ROOT_PATH / "Data"
 def main() -> None:
     """Main function to demonstrate InputHandler usage."""
     # Create an SDR instance demoing the encoder layer
-    sdr_test = SDR([50, 50])
-    sdr_test.set_sparse([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48])
-    print("SDR Sparse Test:", sdr_test)
+    sdr_one = SDR([3,3])
+    sdr_two = SDR([3,3])
+    sdr_three = SDR([3,3])
+    sdr_cat = SDR([9,3])
 
-    sdr_test_dense = SDR([2,2])
-    sdr_test_dense.set_dense([0, 0,1,1])
-    print("SDR Dense Test:", sdr_test_dense)
+    sdr_one.set_dense([1,0,1,0,1,0,1,0,1])
+    sdr_two.set_dense([0,1,0,1,0,1,0,1,0])
+    sdr_three.set_dense([1,1,0,0,1,1,0,0,1])
+
+    print("SDR One:")
+    print(sdr_one)
+    print("SDR Two:")
+    print(sdr_two)
+    print("SDR Three:")
+    print(sdr_three)
+
+    sdr_cat.concatenate([sdr_two,sdr_one, sdr_three], axis=0)
+    print("Union of SDR One,SDR Two, and SDR Three:")
+    print(sdr_cat)
+    
+
+    sdr_sparse = SDR([100,21])
+    sdr_sparse.set_sparse([0,2,4,6,8,2000])
+
+
+    print("Sparse SDR:")
+    print(sdr_sparse)
+
+
+
 
 
     
