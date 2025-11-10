@@ -1,11 +1,10 @@
 """Scalar encoder utilities for converting scalars into Sparse Distributed Representations."""
 
-from typing import List
 from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 from SDR import SDR
 from dataclasses import dataclass
 import math
-import numpy as np
+
 
 """
 Define the ScalarEncoder class

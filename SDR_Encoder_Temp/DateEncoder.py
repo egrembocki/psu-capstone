@@ -12,7 +12,7 @@ from SDR_Encoder_Temp.SDR import SDR
 
 
 @dataclass
-class DateEncoderParameters:
+class DateEncoderParameters(BaseEncoder):
     """
     Container for the individual feature encoders that compose the DateEncoder.
 
