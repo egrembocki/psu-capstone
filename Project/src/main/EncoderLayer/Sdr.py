@@ -617,7 +617,8 @@ class SDR:
         )
         nta_check(
             self.__destroy_callbacks[idx] is not None,
-            "SparseDistributedRepresentation::removeDestroyCallback, Callback already removed!",
+            "SparseDistributedRepresentation::removeDestroyCallback, "
+            "Callback already removed!",
         )
         self.__destroy_callbacks[idx] = None
 
