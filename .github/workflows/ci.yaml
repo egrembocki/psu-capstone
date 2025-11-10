@@ -111,7 +111,7 @@ jobs:
           # Use configuration from pyproject.toml
           flake8_args: ""
           fail_on_error: true
-          source_path: './src'
+          # source_path: './src'
           mypy_enabled: false
           pydoc_lint_enabled: true
           ruff_enabled: false
@@ -124,7 +124,7 @@ jobs:
           isort_args: ""
           black_args: ""
           fail_on_error: true
-          source_path: './src'
+          # source_path: './src'
           ruff_enabled: false
       
       - name: Run tests
