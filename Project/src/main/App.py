@@ -1,7 +1,9 @@
 
 from datetime import datetime
-from SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
-from SDR_Encoder_Temp.SDR import SDR
+
+from ....SDR_Encoder_Temp.SDR import SDR
+from ....SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
+
 
 if __name__ == "__main__":
     params = DateEncoderParameters(
