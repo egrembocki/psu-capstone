@@ -6,7 +6,6 @@ inputs:
     description: 'Additional arguments to pass to flake8'
     required: false
     default: '--max-line-length=100 --ignore=E203, W503'
-    type: string
   mypy_enabled:
     description: 'Enable mypy type checking'
     required: false

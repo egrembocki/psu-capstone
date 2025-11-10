@@ -15,3 +15,17 @@ repos:
     - id: mixed-line-ending
       args: ["--fix=lf"]
     - id: check-shebang-scripts-are-executable
+  - repo: local
+    hooks:
+      - id: python-flake8
+        name: Python Linter
+        entry: make lint
+        pass_filenames: false
+        types: [python]
+        language: system
+      - id: python-format
+        name: Python Formatting
+        entry: make format
+        pass_filenames: false
+        types: [python]
+        language: system

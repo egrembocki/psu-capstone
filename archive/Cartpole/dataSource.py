@@ -1,4 +1,5 @@
 import sys
+
 import requests
 import yfinance as yf
 
@@ -15,9 +16,7 @@ def fetch(ticker: str, start: str, end: str):
         group_by="column",
     )
     if df.empty:  # type: ignore
-        raise RuntimeError(
-            f"No data returned for {ticker}. Check network/proxy or try again."
-        )
+        raise RuntimeError(f"No data returned for {ticker}. Check network/proxy or try again.")
     return df
 
 

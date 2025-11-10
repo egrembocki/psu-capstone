@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from SDR import SDR
 from typing import List
+
+from SDR import SDR
+
 
 class BaseEncoder(ABC):
 
@@ -10,10 +12,11 @@ class BaseEncoder(ABC):
 
         if dimensions is not None:
             self.initialize(dimensions)
-     #
-     # Members dimensions & size describe the shape of the encoded output SDR.
-     # This is the total number of bits in the result.
-     #
+
+    #
+    # Members dimensions & size describe the shape of the encoded output SDR.
+    # This is the total number of bits in the result.
+    #
     @property
     def dimensions(self) -> List[int]:
         return self._dimensions

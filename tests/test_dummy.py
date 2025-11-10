@@ -2,7 +2,7 @@
 File for making sure testing actions work and pre-commit stuff, will delete
 """
 
-from src.utils import add_numbers, greet
+from psu_capstone.utils import add_numbers, greet
 
 
 def test_dummy() -> None:

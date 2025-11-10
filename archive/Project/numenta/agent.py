@@ -1,22 +1,21 @@
 import sys
-
-from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Dict, Any
-from numenta.utils import get_logger
-
-sys.path.append(str(Path(__file__).parents[1]))
+from pathlib import Path
+from typing import Any, Dict
 
 import numpy as np
 from gymnasium import spaces
+from htm import TemporalPooler
 from numenta.frozen_lake import FrozenLakeEnvironment, GymAdapter
-from stable_baselines3 import PPO 
+from numenta.utils import get_logger
+from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from htm import TemporalPooler
+sys.path.append(str(Path(__file__).parents[1]))
+
 
 class Agent:
-    def __init__(self, L2: TemporalPooler|None=None, L5: TemporalPooler|None=None):
+    def __init__(self, L2: TemporalPooler | None = None, L5: TemporalPooler | None = None):
         self.sdr_size = 64
         self.cells_per_column = 4
         self.sparsity = 0.1
@@ -41,7 +40,7 @@ class Agent:
             L5
             if L5 is not None
             else TemporalPooler(
-                input_space_size=self.sdr_size + self.L2.column_count*self.L2.cells_per_column,
+                input_space_size=self.sdr_size + self.L2.column_count * self.L2.cells_per_column,
                 column_count=self.sdr_size * 2,
                 cells_per_column=self.cells_per_column,
                 initial_synapses_per_column=12,
@@ -53,17 +52,19 @@ class Agent:
         return self.sdr_size * 2 * self.cells_per_column
 
     def encode_feature(self, feature_vector):
-        state = self.L2.run({'X': feature_vector})
-        return state['predictive_cells']
+        state = self.L2.run({"X": feature_vector})
+        return state["predictive_cells"]
+
     def encode_location_and_feature(self, location_vector, feature_vector):
         visual_feature_vector = self.encode_feature(feature_vector)
-        input_data: Dict[str, Any] = {'G': location_vector, 'F': visual_feature_vector}
+        input_data: Dict[str, Any] = {"G": location_vector, "F": visual_feature_vector}
         state = self.L5.run(input_data)
-        return state['active_cells']
-        return state['active_cells']
+        return state["active_cells"]
+        return state["active_cells"]
+
 
 class SDRFrozenLakeEnvironment:
-    def __init__(self, render_mode="human", size=8, agent: Agent|None=None):
+    def __init__(self, render_mode="human", size=8, agent: Agent | None = None):
         """
         Create an SDR-encoded wrapper around FrozenLake.
 
@@ -90,43 +91,41 @@ class SDRFrozenLakeEnvironment:
         }
         # Access the desc attribute safely by getting the underlying FrozenLake environment
         frozen_lake_env = self.env.env.unwrapped
-        desc = getattr(frozen_lake_env, 'desc', None)
+        desc = getattr(frozen_lake_env, "desc", None)
         if desc is not None:
             features = set(desc.flatten().tolist())
         else:
             # Fallback if desc is not available
-            features = [b'S', b'F', b'H', b'G']
-        
+            features = [b"S", b"F", b"H", b"G"]
+
         self.feature_map = {
-            str(feature, "utf-8"): np.random.permutation(self.agent.sdr)
-            for feature in features
+            str(feature, "utf-8"): np.random.permutation(self.agent.sdr) for feature in features
         }
 
     def _stimuli_to_obs(self, stimuli):
-        desc = getattr(self.env.env.unwrapped, 'desc', None)
+        desc = getattr(self.env.env.unwrapped, "desc", None)
         if desc is not None:
-            vision_sensor = str(desc.flatten()[stimuli], 'utf-8')
+            vision_sensor = str(desc.flatten()[stimuli], "utf-8")
         else:
             # Fallback if desc is not available
-            vision_sensor = 'F'  # Default to frozen tile
-        current_stimuli = {'location': stimuli, 'vision_sensor': vision_sensor}
-        current_location = current_stimuli['location']
-        current_feature = current_stimuli['vision_sensor']
+            vision_sensor = "F"  # Default to frozen tile
+        current_stimuli = {"location": stimuli, "vision_sensor": vision_sensor}
+        current_location = current_stimuli["location"]
+        current_feature = current_stimuli["vision_sensor"]
         encoded = self.agent.encode_location_and_feature(
-            self.location_map[current_location],
-            self.feature_map[current_feature]
+            self.location_map[current_location], self.feature_map[current_feature]
         )
         return np.array(encoded).flatten().tolist()
 
     def reset(self, seed=None):
         obs, reward, done, truncated, info, surrounding_tiles = self.env.reset(seed=seed)
         obs = self._stimuli_to_obs(obs)
-        return obs, reward, done, truncated, info, surrounding_tiles 
+        return obs, reward, done, truncated, info, surrounding_tiles
 
     def step(self, action):
         obs, reward, done, truncated, info, surrounding_tiles = self.env.step(action)
         obs = self._stimuli_to_obs(obs)
-        return obs, reward, done, truncated, info, surrounding_tiles 
+        return obs, reward, done, truncated, info, surrounding_tiles
 
     def render(self):
         return self.env.render()
@@ -134,8 +133,9 @@ class SDRFrozenLakeEnvironment:
     def close(self):
         self.env.close()
 
+
 class Environment(ABC):
-    """ Abstract base class for environments. """
+    """Abstract base class for environments."""
 
     def __init__(self):
         self.logger = get_logger(self.__class__.__name__)
@@ -157,13 +157,12 @@ class Environment(ABC):
 
     @abstractmethod
     def receive_sensory_stimuli(self) -> Dict[str, Any]:
-        ''' Receives sensory stimuli from the 
-        actual environment. '''
+        """Receives sensory stimuli from the
+        actual environment."""
         pass
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create a shared Agent so training and evaluation use the same internal L2/L5
     shared_agent = Agent()
 
@@ -186,5 +185,7 @@ if __name__ == '__main__':
 
     env.close()
 
-    mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=20, deterministic=True)
+    mean_reward, std_reward = evaluate_policy(
+        model, eval_env, n_eval_episodes=20, deterministic=True
+    )
     print(mean_reward, std_reward)
