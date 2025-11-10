@@ -212,7 +212,8 @@ class ScalarEncoder(BaseEncoder):
         ), "Missing argument, need one of: 'size', 'radius', 'resolution', 'category'."
         assert (
             num_size_args == 1
-        ), "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them."
+        ), "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only"
+        " one of them."
         if parameters.periodic:
             assert (
                 not parameters.clip_input
