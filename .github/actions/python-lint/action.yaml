@@ -189,35 +189,35 @@ runs:
         pydoclint_status="${{ steps.pydoclint_check.outputs.status }}"
 
         # initialize overall status as passed
-        overall_status="passed"
+        overall_status="pass"
         failed_tools=()
 
         # Check flake8 status
-        if [ "$flake8_status" != "passed" ]; then
+        if [ "$flake8_status" != "pass" ]; then
           overall_status="failed"
           failed_tools+=("Flake8")
         fi
 
         # Check mypy status if enabled
-        if [ "${{ inputs.mypy_enabled }}" == "true" ] && [ "$mypy_status" != "passed" ]; then
+        if [ "${{ inputs.mypy_enabled }}" == "true" ] && [ "$mypy_status" != "pass" ]; then
           overall_status="failed"
           failed_tools+=("MyPy")
         fi
 
         # Check pydoclint status if enabled
-        if [ "${{ inputs.pydoclint_enabled }}" == "true" ] && [ "$pydoclint_status" != "passed" ]; then
+        if [ "${{ inputs.pydoclint_enabled }}" == "true" ] && [ "$pydoclint_status" != "pass" ]; then
           overall_status="failed"
           failed_tools+=("Pydoclint")
         fi
 
         # Check ruff status if enabled
-        if [ "${{ inputs.ruff_enabled }}" == "true" ] && [ "${{ steps.ruff_check.outputs.status }}" != "passed" ]; then
+        if [ "${{ inputs.ruff_enabled }}" == "true" ] && [ "${{ steps.ruff_check.outputs.status }}" != "pass" ]; then
           overall_status="failed"
           failed_tools+=("Ruff")
         fi
 
         # Report results
-        if [[ "$overall_status" == "passed" ]]; then
+        if [[ "$overall_status" == "pass" ]]; then
           echo "🚀 All enabled linting checks passed successfully!"
         else
           echo "❌ Linting checks failed for: ${failed_tools[*]}"
