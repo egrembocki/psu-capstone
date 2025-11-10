@@ -91,7 +91,7 @@ jobs:
           echo "latest-version=${latest}" >> $GITHUB_OUTPUT
           echo "Latest Python version is $latest"
 
-  test:
+  ci:
     name: Lint & Test (Python ${{ matrix.python-version }})
     needs: setup
     runs-on: ubuntu-latest
@@ -102,7 +102,7 @@ jobs:
     
     strategy:
       matrix:
-          python-version: ${{ fromJSON(inputs.python_versions) }}
+        python-version: ${{ fromJSON(inputs.python_versions) }}
       fail-fast: ${{ inputs.fail_fast }}
   
     steps:
