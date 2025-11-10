@@ -86,7 +86,7 @@ runs:
 
     - name: Detect Package Manager
       id: detect_package_manager
-      uses: egrembocki/psu-capstone/.github/actions/python-detect-package-manager@main
+      uses: ./.github/actions/python-detect-package-manager
       with:
         package_manager: ${{ inputs.package_manager }}
         project_path: '.'
@@ -123,7 +123,7 @@ runs:
         if [[ "${{ inputs.install_dev_dependencies }}" == "true" ]]; then
           dev_groups="dev"
         else
-          dev_groups="${{ inputs.install_dev_dependencies}}"
+          dev_groups="${{ inputs.install_dev_dependencies }}"
         fi
 
         case $pm in
@@ -227,7 +227,7 @@ runs:
             echo "$test_files"
           else
             echo "No test files found. Creating a simple test structure..."
-            mkdir -p tests'
+            mkdir -p tests
             echo "# No tests found - this is a placeholder" > tests/.gitkeep
           fi
           else
@@ -245,7 +245,7 @@ runs:
 
         # Build pytest command
         pytest_cmd="pytest --junitxml=junit.xml"
-        [[ "${{ inputs.coverage }}" == "true" ]] && pytest_cmd="$pytest_cmd --cov=.
+        [[ "${{ inputs.coverage }}" == "true" ]] && pytest_cmd="$pytest_cmd --cov=."
         [[ -n "${{ inputs.pytest_args }}" ]] && pytest_cmd="$pytest_cmd ${{ inputs.pytest_args }}"
         [[ -e "${{ inputs.test_path }}" ]] && pytest_cmd="$pytest_cmd ${{ inputs.test_path }}"
 
@@ -322,7 +322,7 @@ runs:
         echo "test_count=$test_count" >> $GITHUB_OUTPUT
 
     - name: Upload coverage reports
-      if: inputs.coverage == 'true' && (inputs.coverage_format == 'xml'
+      if: ${{ inputs.coverage == 'true' && inputs.coverage_format == 'xml' }}
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       with:
         name: coverage-report
@@ -338,9 +338,9 @@ runs:
         detection_method="${{ steps.detect_package_manager.outputs.detection_method }}"
 
         if [[ "$status" == "pass" ]]; then
-          icon = "✅"
+          icon="✅"
         else
-          icon = "❌"
+          icon="❌"
         fi
 
         echo "## $icon Python Test Summary" >> $GITHUB_STEP_SUMMARY
