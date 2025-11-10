@@ -130,7 +130,7 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/python-tests
         with:
-          install_uv_dependencies: "--group dev --group tests --group linters --group formatters --all-extras"
+          install_dev_dependencies: "--group dev --group tests --group linters --group formatters --all-extras"
           pytest_args: '--junitxml=pytest-results.xml'
           coverage: ${{true && matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
           show_configuration: ${{ matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}

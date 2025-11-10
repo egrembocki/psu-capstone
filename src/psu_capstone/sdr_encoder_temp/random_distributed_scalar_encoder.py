@@ -6,7 +6,6 @@ from typing import List
 
 import mmh3
 from SDR import SDR
-
 from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 
 
