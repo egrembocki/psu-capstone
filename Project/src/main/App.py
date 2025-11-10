@@ -1,6 +1,3 @@
-
-
-
 import InputLayer.InputHandler as ih
 import pathlib as path
 import os
@@ -12,11 +9,12 @@ DATA_PATH = ROOT_PATH / "Data"
 
 """Driver code to test InputHandler functionality."""
 
+
 def main():
     """Main function to demonstrate InputHandler usage."""
     # Create an instance of InputHandler
     handler = ih.InputHandler()
-    
+
     # Set some raw data, will need more abstraction later
     data_set = handler.load_data(os.path.join(DATA_PATH, "concat_ESData.xlsx"))
 
@@ -31,6 +29,7 @@ def main():
     print("Data Validation:", handler.validate_data())
     print(data_frame.info())
 
+
 if __name__ == "__main__":
-      
+
     main()
