@@ -19,26 +19,6 @@ on:
       - dev
   workflow_call:
     inputs:
-      python_versions:
-        description: 'JSON array of Python versions to test against, e.g. ["3.10","3.11"]'
-        required: false
-        default: '["3.10", "3.11", "3.12", "3.13"]'
-        type: string
-      fail_fast:
-        description: 'Fail fast on matrix failures'
-        required: false
-        default: true
-        type: boolean
-      install_dependencies:
-        description: 'Dependencies installation command for uv'
-        required: false
-        default: '--group dev --group tests --group linters --group formatters'
-        type: string
-      source_path:
-        description: 'Path to the source code directory'
-        required: false
-        default: './src'
-        type: string
       mypy_enabled:
         description: 'Enable mypy type checking (configured in pyproject.toml)'
         required: false
@@ -86,7 +66,7 @@ jobs:
         shell: bash
         run: |-
           # Parse the JSON array, sort versions, and get the latest version
-          versions=${{ inputs.python_versions }}
+          versions='["3.10", "3.11", "3.12", "3.13"]'
           latest=$(echo "$versions" | jq -r '.[]' | sort -V | tail -n 1)
           echo "latest-version=${latest}" >> $GITHUB_OUTPUT
           echo "Latest Python version is $latest"
@@ -104,7 +84,7 @@ jobs:
       matrix:
         # python-version: ${{ fromJSON(github.event.inputs.python_versions) }}
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-      fail-fast: ${{ inputs.fail_fast }}
+      fail-fast: true
   
     steps:
       - name: Checkout code
@@ -122,7 +102,7 @@ jobs:
       
       - name: Install dependencies
         run: |-
-          uv sync ${{ inputs.install_dependencies }}
+          uv sync --group dev --group tests --group linters --group formatters
       
       - name: Lint code
         if: matrix.python-version == needs.setup.outputs.latest-python-version
@@ -131,10 +111,10 @@ jobs:
           # Use configuration from pyproject.toml
           flake8_args: ""
           fail_on_error: true
-          source_path: ${{ inputs.source_path }}
-          mypy_enabled: ${{ inputs.mypy_enabled }}
-          pydoc_lint_enabled: ${{ inputs.pydocstyle_enabled }}
-          ruff_enabled: ${{ inputs.ruff_enabled }}
+          source_path: './src'
+          mypy_enabled: false
+          pydoc_lint_enabled: true
+          ruff_enabled: false
       
       - name: Format check
         if: matrix.python-version == needs.setup.outputs.latest-python-version
@@ -144,15 +124,15 @@ jobs:
           isort_args: ""
           black_args: ""
           fail_on_error: true
-          source_path: ${{ inputs.source_path }}
-          ruff_enabled: ${{ inputs.ruff_enabled }}
+          source_path: './src'
+          ruff_enabled: false
       
       - name: Run tests
         uses: egrembocki/psu-capstone/.github/actions/python-tests.yaml@main
         with:
-          install_uv_dependencies: "${{ inputs.install_dependencies }} --all-extras"
-          pytest_args: ${{ inputs.pytest_args }}
-          coverage: ${{inputs.coverage_enabled && matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
+          install_uv_dependencies: "--group dev --group tests --group linters --group formatters --all-extras"
+          pytest_args: '--junitxml=pytest-results.xml'
+          coverage: ${{true && matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
           show_configuration: ${{ matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
           coverage_format: xml
       
