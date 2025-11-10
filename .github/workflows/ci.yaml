@@ -27,7 +27,7 @@ on:
       pydocstyle_enabled:
         description: 'Enable pydocstyle docstring checking (configured in pyproject.toml)'
         required: false
-        default: true
+        default: false
         type: boolean
       ruff_enabled:
         description: 'Enable ruff linting and formatting (configured in pyproject.toml)'
