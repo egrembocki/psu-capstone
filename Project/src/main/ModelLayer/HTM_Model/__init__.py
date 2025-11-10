@@ -1,1 +1,0 @@
-from numenta import htm

@@ -1,0 +1,194 @@
+name: CI
+
+permissions: 
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feature/*"
+      - "fix/*"
+      - "bugfix/*"
+      - "hotfix/*"
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+    inputs:
+      python_versions:
+        description: 'JSON array of Python versions to test against, e.g. ["3.10","3.11"]'
+        required: false
+        default: '["3.10", "3.11", "3.12", "3.13"]'
+        type: string
+      timeout_minutes:
+        description: 'Job timeout in minutes'
+        required: false
+        default: 15
+        type: number
+      fail_fast:
+        description: 'Fail fast on matrix failures'
+        required: false
+        default: true
+        type: boolean
+      install_dependencies:
+        description: 'Dependencies installation command for uv'
+        required: false
+        default: '--group dev --group tests --group linters --group formatters'
+        type: string
+      fail_on_lint:
+        description: 'Fail the run if lint fails'
+        required: false
+        default: true
+        type: boolean
+      source_path:
+        description: 'Path to the source code directory'
+        required: false
+        default: './src'
+        type: string
+      mypy_enabled:
+        description: 'Enable mypy type checking (configured in pyproject.toml)'
+        required: false
+        default: false
+        type: boolean
+      pydocstyle_enabled:
+        description: 'Enable pydocstyle docstring checking (configured in pyproject.toml)'
+        required: false
+        default: true
+        type: boolean
+      ruff_enabled:
+        description: 'Enable ruff linting and formatting (configured in pyproject.toml)'
+        required: false
+        default: false
+        type: boolean
+      fail_on_fmt:
+        description: 'Fail run if formatting check fails'
+        required: false
+        default: true
+        type: boolean
+      pytest_args:
+        description: 'Additional pytest args'
+        required: false
+        default: '--junitxml=pytest-results.xml'
+        type: string
+      coverage_enabled:
+        description: 'Whether to run coverage analysis'
+        required: false
+        default: true
+        type: boolean
+      upload_artifacts:
+        description: 'Whether to upload test artifacts'
+        required: false
+        default: false
+        type: boolean
+      artifact_retention_days:
+        description: 'Number of days to retain uploaded artifacts'
+        required: false
+        default: 7
+        type: number
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      latest-python-version: ${{ steps.get-latest-python.outputs.latest-version }}
+    steps:
+      - name: Get Latest Python Version
+        id: get-latest-python
+        shell: bash
+        run: |-
+          # Parse the JSON array, sort versions, and get the latest version
+          versions=${{ inputs.python-versions }}
+          latest=$(echo "$versions" | jq -r '.[]' | sort -V | tail -n 1)
+          echo "latest-version=${latest}" >> $GITHUB_OUTPUT
+          echo "Latest Python version is $latest"
+
+  test:
+    name: Lint & Test (Python ${{ matrix.python-version }})
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    strategy:
+      matrix:
+          python-version: ${{ fromJSON(inputs.python-versions) }}
+      fail-fast: ${{ inputs.fail-fast }}
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: Set up Python env
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@85856786d1ce8acfbcc2f13a5f3fbd6b938f9f41
+        with:
+          version: "latest"
+      
+      - name: Install dependencies
+        run: |-
+          uv sync ${{ inputs.install_dependencies }}
+      
+      - name: Lint code
+        if: matrix.python-version == needs.setup.outputs.latest-python-version
+        uses: egrembocki/psu-capstone/.github/actions/python-lint.yaml@main
+        with: 
+          # Use configuration from pyproject.toml
+          flake8_args: ""
+          fail_on_error: ${{ inputs.fail_on_lint }}
+          source_path: ${{ inputs.source_path }}
+          mypy_enabled: ${{ inputs.mypy_enabled }}
+          pydoc_lint_enabled: ${{ inputs.pydocstyle_enabled }}
+          ruff_enabled: ${{ inputs.ruff_enabled }}
+      
+      - name: Format check
+        if: matrix.python-version == needs.setup.outputs.latest-python-version
+        uses: egrembocki/psu-capstone/.github/actions/python-fmt.yaml@main
+        with:
+          # Use configuration from pyproject.toml
+          isort_args: ""
+          black_args: ""
+          fail_on_error: ${{ inputs.fail_on_fmt }}
+          source_path: ${{ inputs.source_path }}
+          ruff_enabled: ${{ inputs.ruff_enabled }}
+      
+      - name: Run tests
+        uses: egrembocki/psu-capstone/.github/actions/python-tests.yaml@main
+        with:
+          install_uv_dependencies: "${{ inputs.install_dependencies }} --all-extras"
+          pytest_args: ${{ inputs.pytest_args }}
+          coverage: ${{inputs.coverage_enabled && matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
+          show_configuration: ${{ matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
+          coverage_format: xml
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: ${{ inputs.upload_artifacts && always()}}
+        with:
+          name: test-results-python-${{ matrix.python-version }}
+          path: |
+            pytest-results.xml
+          retention-days: ${{ inputs.artifact_retention_days }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: ${{ inputs.upload_artifacts && inputs.coverage_enabled && matrix.python-version == needs.setup.outputs.latest-python-version && always() }}
+        with:
+          name: test-coverage-report
+          path: |
+            coverage.xml
+          retention-days: ${{ inputs.artifact_retention_days }}

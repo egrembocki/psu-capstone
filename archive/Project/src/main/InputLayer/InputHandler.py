@@ -123,4 +123,3 @@ class InputHandler:
             cls._instance = super(InputHandler, cls).__new__(cls)
         
         return cls._instance
-

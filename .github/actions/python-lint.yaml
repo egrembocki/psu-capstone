@@ -1,0 +1,233 @@
+name: 'Python Lint Check'
+description: 'Lint Python code using flake8, mypy and pydoclint with configurable options'
+
+inputs:
+  flake8_args:
+    description: 'Additional arguments to pass to flake8'
+    required: false
+    default: '--max-line-length=100 --ignore=E203, W503'
+    type: string
+  mypy_enabled:
+    description: 'Enable mypy type checking'
+    required: false
+    default: 'false'
+  mypy_args:
+    description: 'Additional arguments to pass to mypy'
+    required: false
+    default: '--show-error-codes'
+  pydoclint_enabled:
+    description: 'Enable pydoclint docstring checking'
+    required: false
+    default: 'false'
+  pydoclint_args:
+    description: 'Additional arguments to pass to pydoclint'
+    required: false
+    default: '--style=google'
+  ruff_enabled:
+    description: 'Enable ruff linting and formatting'
+    required: false
+    default: 'false'
+  ruff_args:
+    description: 'Additional arguments to pass to ruff'
+    required: false
+    default: '--output-format=concise'
+  source_path:
+    description: 'Path to the source code directory'
+    required: false
+    default: '.'
+  fail_on_error:
+    description: 'Fail the run if any linting errors are found'
+    required: false
+    default: 'true'
+
+outputs:
+  flake8_status:
+    description: 'Status of flake8 linting check (pass/fail)'
+    value: ${{ steps.flake8_check.outputs.status }}
+  mypy_status:
+    description: 'Status of mypy type checking (pass/fail)'
+    value: ${{ steps.mypy_check.outputs.status }}
+  pydoclint_status:
+    description: 'Status of pydoclint docstring checking (pass/fail)'
+    value: ${{ steps.pydoclint_check.outputs.status }}
+  ruff_status:
+    description: 'Status of ruff linting check (pass/fail)'
+    value: ${{ steps.ruff_check.outputs.status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install linting tools
+      shell: bash
+      run: |
+        # Install linting tools
+        python -m pip install --upgrade pip
+
+        # Install flake8
+        pip install flake8 flake8-pyproject
+
+        # Install mypy if enabled
+        if [ "${{ inputs.mypy_enabled }}" = "true" ]; then
+          pip install mypy
+          echo "✅ MyPy installed"
+        else
+          echo "⏩ MyPy not enabled, skipping installation"
+        fi
+
+        # Install pydoclint if enabled
+        if [ "${{ inputs.pydoclint_enabled }}" = "true" ]; then
+          pip install pydoclint
+          echo "✅ Pydoclint installed"
+        else  
+          echo "⏩ Pydoclint not enabled, skipping installation"
+        fi
+
+        # Install ruff if enabled
+        if [ "${{ inputs.ruff_enabled }}" = "true" ]; then
+          pip install ruff
+          echo "✅ Ruff installed"
+        else
+          echo "⏩ Ruff not enabled, skipping installation"
+        fi
+
+    - name: Flake8 Lint Check
+      id: flake8_check
+      shell: bash
+      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # run flake8
+        echo "Running flake8 lint check..."
+        if flake8 ${{ inputs.source_path }} ${{ inputs.flake8_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ Flake8 lint check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ Flake8 lint check failed"
+        fi
+
+    - name: MyPy Type Check
+      id: mypy_check
+      if: inputs.mypy_enabled == 'true'
+      shell: bash
+      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # run mypy
+        echo "Running MyPy type check..."
+        if mypy ${{ inputs.source_path }} ${{ inputs.mypy_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ MyPy type check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ MyPy type check failed"
+        fi
+
+    - name: Pydoclint Docstring Check
+      id: pydoclint_check
+      if: inputs.pydoclint_enabled == 'true'
+      shell: bash
+      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # run pydoclint
+        echo "Running Pydoclint docstring check..."
+        if pydoclint ${{ inputs.source_path }} ${{ inputs.pydoclint_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ Pydoclint docstring check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ Pydoclint docstring check failed"
+        fi
+
+    - name: Ruff Lint Check
+      id: ruff_check
+      if: inputs.ruff_enabled == 'true'
+      shell: bash
+      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # run ruff
+        echo "Running Ruff lint check..."
+        if ruff check ${{ inputs.source_path }} ${{ inputs.ruff_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ Ruff lint check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ Ruff lint check failed"
+        fi 
+      
+    - name: Summary
+      shell: bash
+      run: |
+        # Summary of linting results
+        echo "## Python Linting Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Tool | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Flake8 | ${{ steps.flake8_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ inputs.mypy_enabled }}" = "true" ]; then
+          echo "| MyPy | ${{ steps.mypy_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| MyPy | Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ "${{ inputs.pydoclint_enabled }}" = "true" ]; then
+          echo "| Pydoclint | ${{ steps.pydoclint_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Pydoclint | Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ "${{ inputs.ruff_enabled }}" = "true" ]; then
+          echo "| Ruff | ${{ steps.ruff_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Ruff | Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Check status and fail if needed
+      id: status_check
+      shell: bash
+      run: |-
+        # Check status and fail if needed
+        flake8_status="${{ steps.flake8_check.outputs.status }}"
+        mypy_status="${{ steps.mypy_check.outputs.status }}"
+        pydoclint_status="${{ steps.pydoclint_check.outputs.status }}"
+
+        # initialize overall status as passed
+        overall_status="passed"
+        failed_tools=()
+
+        # Check flake8 status
+        if [ "$flake8_status" != "passed" ]; then
+          overall_status="failed"
+          failed_tools+=("Flake8")
+        fi
+
+        # Check mypy status if enabled
+        if [ "${{ inputs.mypy_enabled }}" == "true" ] && [ "$mypy_status" != "passed" ]; then
+          overall_status="failed"
+          failed_tools+=("MyPy")
+        fi
+
+        # Check pydoclint status if enabled
+        if [ "${{ inputs.pydoclint_enabled }}" == "true" ] && [ "$pydoclint_status" != "passed" ]; then
+          overall_status="failed"
+          failed_tools+=("Pydoclint")
+        fi
+
+        # Check ruff status if enabled
+        if [ "${{ inputs.ruff_enabled }}" == "true" ] && [ "${{ steps.ruff_check.outputs.status }}" != "passed" ]; then
+          overall_status="failed"
+          failed_tools+=("Ruff")
+        fi
+
+        # Report results
+        if [[ "$overall_status" == "passed" ]]; then
+          echo "🚀 All enabled linting checks passed successfully!"
+        else
+          echo "❌ Linting checks failed for: ${failed_tools[*]}"
+
+          # Fail the action if fail_on_error is true
+          if [ "${{ inputs.fail_on_error }}" == "true" ]; then
+            echo "Failing the action due to linting errors (fail_on_error=true)"
+            exit 1
+          else
+            echo "Continuing the action despite linting errors (fail_on_error=false)"
+          fi
+        fi
