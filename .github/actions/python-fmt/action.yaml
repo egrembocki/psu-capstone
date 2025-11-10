@@ -130,28 +130,28 @@ runs:
         ruff_status="${{ steps.ruff_check.outputs.status }}"
 
         # initialize overall status as passed
-        overall_status="passed"
+        overall_status="pass"
         failed_tools=()
 
         # Check black and isort
-        if [[ "$black_status" != "passed" ]]; then
+        if [[ "$black_status" != "pass" ]]; then
           overall_status="failed"
           failed_tools+=("Black")
         fi
 
-        if [[ "$isort_status" != "passed" ]]; then
+        if [[ "$isort_status" != "pass" ]]; then
           overall_status="failed"
           failed_tools+=("Isort")
         fi
 
         # Check ruff status if enabled
-        if [ "${{ inputs.ruff_enabled }}" == "true" ] && "ruff_status" != "passed" ]; then
+        if [ "${{ inputs.ruff_enabled }}" == "true" ] && "ruff_status" != "pass" ]; then
           overall_status="failed"
           failed_tools+=("Ruff")
         fi
 
         # Report results
-        if [[ "$overall_status" == "passed" ]]; then
+        if [[ "$overall_status" == "pass" ]]; then
           echo "🚀 All enabled formatting checks passed successfully!"
         else
           echo "❌ Formatting checks failed for: ${failed_tools[*]}"
