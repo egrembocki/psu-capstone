@@ -92,7 +92,7 @@ runs:
     - name: Flake8 Lint Check
       id: flake8_check
       shell: bash
-      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
       run: |
         # run flake8
         echo "Running flake8 lint check..."
@@ -108,7 +108,7 @@ runs:
       id: mypy_check
       if: inputs.mypy_enabled == 'true'
       shell: bash
-      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
       run: |
         # run mypy
         echo "Running MyPy type check..."
@@ -124,7 +124,7 @@ runs:
       id: pydoclint_check
       if: inputs.pydoclint_enabled == 'true'
       shell: bash
-      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
       run: |
         # run pydoclint
         echo "Running Pydoclint docstring check..."
@@ -140,7 +140,7 @@ runs:
       id: ruff_check
       if: inputs.ruff_enabled == 'true'
       shell: bash
-      continue_on_error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
       run: |
         # run ruff
         echo "Running Ruff lint check..."
