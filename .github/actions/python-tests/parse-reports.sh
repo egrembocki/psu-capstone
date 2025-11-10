@@ -68,7 +68,7 @@ parse_coverage_xml() {
 
   # Show files with low coverage
   local low_coverage
-  low_coverage=$(grep -E 'class.*line-rate="0\.[0-7[0-9]*"' "${coverage_file}" | sed -E 's/.*filename="([^"]*)".*line-rate="([^"]*)".*$/- \1 (\2)/' | head -3 2>/dev/null
+  low_coverage=$(grep -E 'class.*line-rate="0\.[0-7[0-9]*"' "${coverage_file}" | sed -E 's/.*filename="([^"]*)".*line-rate="([^"]*)".*$/- \1 (\2)/' | head -3 2>/dev/null)
   if [[ -n "${low_coverage}" ]]; then
     echo ""
     echo "***Files with Low Coverage (<80%):***"

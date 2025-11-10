@@ -1,6 +1,6 @@
 exclude=.venv,.pytest_cache,notebooks,reports
 
-.PHONY: help install format lint clean test update setup-dev setup-uv-windows setup-uv pre-commit
+.PHONY: help install format lint clean test update setup-dev setup-uv-windows setup-uv pre-commit env-setup
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

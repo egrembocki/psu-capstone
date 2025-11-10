@@ -101,10 +101,10 @@ runs:
           # Priority 1: Check for lock files (most reliable)
           if [[ -f "poetry.lock" ]]; then
             pm="poetry"
-            echo "Detected Poetry via "poetry.lock"
+            echo "Detected Poetry via poetry.lock"
           elif [[ -f "uv.lock" ]]; then
             pm="uv"
-            echo "Detected uv via "uv.lock"
+            echo "Detected uv via uv.lock"
           
           # Priority 2: Check for conda environment file
           elif [[ -f "environment.yml" || -f "conda.yml" ]]; then
@@ -118,11 +118,11 @@ runs:
             # Check for Poetry configuration
             if grep -q "^\[tool\.poetry\]" pyproject.toml; then
               pm="poetry"
-              echo "Detected Poetry via [tool.poetry] section]"
+              echo "Detected Poetry via [tool.poetry] section"
             # Check for uv configuration
             elif grep -q "^\[tool\.uv\]" pyproject.toml; then
               pm="uv"
-              echo "Detected uv via [tool.uv] section]"
+              echo "Detected uv via [tool.uv] section"
             # Check build system for poetry
             elif grep -q "poetry\.core" pyproject.toml; then
               pm="poetry"
@@ -136,7 +136,7 @@ runs:
                 echo "Detected pip via standard pyproject.toml structure"
               else
                 pm="uv"
-                echo "Detected uv via uv references in "pyproject.toml"
+                echo "Detected uv via uv references in pyproject.toml"
               fi
 
             # Default to pip for standard pyproject.toml
