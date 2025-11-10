@@ -6,7 +6,9 @@ import os
 from typing import Union
 
 
-"""InputHandler singleton to pass a Data object to the Encoder layer. Implemented as a singleton layer handler for now, with methods to convert raw data to DataFrame, sequence, etc."""
+"""InputHandler singleton to pass a Data object to the Encoder layer.
+Implemented as a singleton  layer handler for now, with methods to convert raw data to
+DataFrame, sequence, etc."""
 
 
 class InputHandler:
@@ -42,7 +44,8 @@ class InputHandler:
     # main methods to handle input data processing
 
     def load_data(self, filepath: str) -> pd.DataFrame:
-        """Load data from a file with padas based on file extension. This will automatically create a dataframe."""
+        """Load data from a file with padas based on file extension.
+        This will automatically create a dataframe."""
 
         assert os.path.exists(filepath), f"The file {filepath} does not exist."
         assert isinstance(filepath, str), "Filepath must be a string."
@@ -83,7 +86,8 @@ class InputHandler:
         """Explicitly convert input data to a pandas DataFrame"""
 
         # Placeholder implementation; actual conversion logic will depend on data type
-        # the main goal is to get the dataset to list first for easy pandas conversion to DataFrame
+        # the main goal is to get the dataset to list first for easy pandas conversion
+        #  to DataFrame
 
         if isinstance(data, pd.DataFrame):
             print("Data is already a DataFrame.")
@@ -142,12 +146,13 @@ class InputHandler:
                 return value, False
         return value, False
 
-    ## validation methods
+    # validation methods
 
     def validate_data(self) -> bool:
         """Validate the input data"""
 
-        # Placeholder implementation; actual validation logic will depend on data type and requirements
+        # Placeholder implementation; actual validation logic will depend on data
+        #  type and requirements
 
         is_valid = isinstance(
             self._data, (pd.DataFrame, list, np.ndarray, pd.Series, dict, str)
