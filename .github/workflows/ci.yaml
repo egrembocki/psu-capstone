@@ -106,7 +106,7 @@ jobs:
       
       - name: Lint code
         if: matrix.python-version == needs.setup.outputs.latest-python-version
-        uses: .github/actions/python-lint@main
+        uses: ./.github/actions/python-lint@main
         with: 
           # Use configuration from pyproject.toml
           flake8_args: ""
@@ -118,7 +118,7 @@ jobs:
       
       - name: Format check
         if: matrix.python-version == needs.setup.outputs.latest-python-version
-        uses: .github/actions/python-fmt@main
+        uses: ./.github/actions/python-fmt@main
         with:
           # Use configuration from pyproject.toml
           isort_args: ""
