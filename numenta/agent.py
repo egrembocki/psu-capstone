@@ -65,7 +65,7 @@ class Agent:
         input_data: Dict[str, Any] = {"G": location_vector, "F": visual_feature_vector}
         state = self.L5.run(input_data)
         return state["active_cells"]
-        return state["active_cells"]
+        
 
 
 class SDRFrozenLakeEnvironment:
