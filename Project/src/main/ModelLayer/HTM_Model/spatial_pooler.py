@@ -56,6 +56,7 @@ class SpatialPooler:
         self.field_ranges: Dict[str, Tuple[int, int]] = {}
         self.field_order: List[str] = []
         self.column_field_map: Dict[Column, str | None] = {}
+
     def _initialize_region(
         self,
         input_space_size: int,
@@ -64,7 +65,7 @@ class SpatialPooler:
         random_seed: int,
     ) -> List[Column]:
         columns: List[Column] = []
-        grid_size = int(column_count ** 0.5)  # assume square grid
+        grid_size = int(column_count**0.5)  # assume square grid
         rng = np.random.default_rng(random_seed)
 
         for i in range(column_count):
@@ -80,7 +81,9 @@ class SpatialPooler:
             ]
             columns.append(Column(potential_synapses, position))
 
-        print(f"[SP] Initialized {len(columns)} columns with positions and potential synapses.")
+        print(
+            f"[SP] Initialized {len(columns)} columns with positions and potential synapses."
+        )
         return columns
 
     # ---------- Input combination & field metadata ----------
@@ -186,21 +189,29 @@ class SpatialPooler:
                 mask[idx] = 1
         return mask
 
-    def _inhibition(self, columns: Sequence[Column], inhibition_radius: float) -> List[Column]:
+    def _inhibition(
+        self, columns: Sequence[Column], inhibition_radius: float
+    ) -> List[Column]:
         active_columns: List[Column] = []
         for c in columns:
             neighbors = [
                 c2
                 for c2 in columns
-                if c is not c2 and self._euclidean_distance(c.position, c2.position) <= inhibition_radius
+                if c is not c2
+                and self._euclidean_distance(c.position, c2.position)
+                <= inhibition_radius
             ]
             min_local_activity = self._kth_score(neighbors, DESIRED_LOCAL_ACTIVITY)
             if c.overlap > 0 and c.overlap >= min_local_activity:
                 active_columns.append(c)
-        print(f"[SP] After inhibition, active columns: {[c.position for c in active_columns]}")
+        print(
+            f"[SP] After inhibition, active columns: {[c.position for c in active_columns]}"
+        )
         return active_columns
 
-    def _euclidean_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
+    def _euclidean_distance(
+        self, pos1: Tuple[int, int], pos2: Tuple[int, int]
+    ) -> float:
         return float(np.linalg.norm(np.array(pos1) - np.array(pos2)))
 
     def _kth_score(self, neighbors: Sequence[Column], k: int) -> float:
@@ -215,7 +226,9 @@ class SpatialPooler:
 
     # ---------- Spatial learning ----------
 
-    def learning_phase(self, active_columns: Sequence[Column], input_vector: np.ndarray) -> None:
+    def learning_phase(
+        self, active_columns: Sequence[Column], input_vector: np.ndarray
+    ) -> None:
         """Spatial Pooler permanence adaptation for currently active columns."""
         for c in active_columns:
             for s in c.potential_synapses:
@@ -223,8 +236,12 @@ class SpatialPooler:
                     s.permanence = min(1.0, s.permanence + PERMANENCE_INC)
                 else:
                     s.permanence = max(0.0, s.permanence - PERMANENCE_DEC)
-            c.connected_synapses = [s for s in c.potential_synapses if s.permanence > CONNECTED_PERM]
-        print(f"[SP] Learning phase updated synapses for {len(active_columns)} active columns.")
+            c.connected_synapses = [
+                s for s in c.potential_synapses if s.permanence > CONNECTED_PERM
+            ]
+        print(
+            f"[SP] Learning phase updated synapses for {len(active_columns)} active columns."
+        )
         _ = self.average_receptive_field_size()
 
     def average_receptive_field_size(self) -> float:
@@ -233,7 +250,9 @@ class SpatialPooler:
         for c in self.columns:
             connected_positions = [s.source_input for s in c.connected_synapses]
             if connected_positions:
-                receptive_field_size = max(connected_positions) - min(connected_positions)
+                receptive_field_size = max(connected_positions) - min(
+                    connected_positions
+                )
                 total_receptive_field_size += receptive_field_size
                 count += 1
         return total_receptive_field_size / count if count > 0 else 0.0

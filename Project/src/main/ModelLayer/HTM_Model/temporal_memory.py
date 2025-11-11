@@ -83,7 +83,9 @@ class TemporalMemory:
         learning_segments_t: Set[Segment] = set()
 
         for column in active_columns:
-            predictive_cells_prev = [cell for cell in column.cells if cell in prev_predictive]
+            predictive_cells_prev = [
+                cell for cell in column.cells if cell in prev_predictive
+            ]
             if predictive_cells_prev:
                 # Correctly predicted column
                 for cell in predictive_cells_prev:
@@ -117,11 +119,16 @@ class TemporalMemory:
         for column in self.columns:
             for cell in column.cells:
                 for seg in cell.segments:
-                    if len(seg.active_synapses(active_cells_t)) >= SEGMENT_ACTIVATION_THRESHOLD:
+                    if (
+                        len(seg.active_synapses(active_cells_t))
+                        >= SEGMENT_ACTIVATION_THRESHOLD
+                    ):
                         predictive_cells_t.add(cell)
                         break
         self.predictive_cells[t] = predictive_cells_t
-        print(f"[TM] Predictive state at t={t}: {len(predictive_cells_t)} cells predictive.")
+        print(
+            f"[TM] Predictive state at t={t}: {len(predictive_cells_t)} cells predictive."
+        )
 
     def _learn(self) -> None:
         t = self.current_t
@@ -183,9 +190,7 @@ class TemporalMemory:
             return np.zeros(len(self.columns), dtype=int)
         pred_cells = self.predictive_cells.get(query_t, set())
         cols = {
-            col
-            for col in self.columns
-            if any(cell in pred_cells for cell in col.cells)
+            col for col in self.columns if any(cell in pred_cells for cell in col.cells)
         }
         mask = np.zeros(len(self.columns), dtype=int)
         for idx, col in enumerate(self.columns):
@@ -204,7 +209,9 @@ class TemporalMemory:
 
     # ---------- Lower-level TM helpers ----------
 
-    def _best_matching_cell(self, column: Column, prev_t: int) -> Tuple[Optional[Cell], Optional[Segment]]:
+    def _best_matching_cell(
+        self, column: Column, prev_t: int
+    ) -> Tuple[Optional[Cell], Optional[Segment]]:
         prev_active_cells = self.active_cells.get(prev_t, set())
         best_cell: Optional[Cell] = None
         best_segment: Optional[Segment] = None
@@ -230,7 +237,10 @@ class TemporalMemory:
         prev_active_cells = self.active_cells.get(t, set())
         active_list: List[Segment] = []
         for seg in cell.segments:
-            if len(seg.active_synapses(prev_active_cells)) >= SEGMENT_ACTIVATION_THRESHOLD:
+            if (
+                len(seg.active_synapses(prev_active_cells))
+                >= SEGMENT_ACTIVATION_THRESHOLD
+            ):
                 active_list.append(seg)
         return active_list
 

@@ -16,7 +16,9 @@ class Column:
     Holds proximal synapses plus a list of cells for Temporal Memory.
     """
 
-    def __init__(self, potential_synapses: List[Synapse], position: Tuple[int, int]) -> None:
+    def __init__(
+        self, potential_synapses: List[Synapse], position: Tuple[int, int]
+    ) -> None:
         self.position: Tuple[int, int] = position
         self.potential_synapses: List[Synapse] = potential_synapses
 
