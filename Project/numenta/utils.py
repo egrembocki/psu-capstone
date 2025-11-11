@@ -3,9 +3,13 @@ import randomname
 
 
 def get_logger(name):
+    """Return a project-level logger prefixed with the lidapy namespace."""
     return logging.getLogger(f"lidapy.{name}")
 
 
 logger = get_logger(__name__)
 
-random_name = lambda: randomname.get_name()
+
+def random_name() -> str:
+    """Return a randomly generated, human-readable name."""
+    return randomname.get_name()

@@ -40,6 +40,7 @@ class Cell:
     segments: List["Segment"]  # forward reference
 
     def __init__(self) -> None:
+        """Initialise the cell with an empty segment list."""
         self.segments = []
 
     def __repr__(self) -> str:
@@ -53,6 +54,7 @@ class DistalSynapse:
     permanence: float
 
     def __init__(self, source_cell: Cell, permanence: float) -> None:
+        """Store the source cell reference and initial permanence."""
         self.source_cell = source_cell
         self.permanence = permanence
 
@@ -64,6 +66,7 @@ class Segment:
     sequence_segment: bool
 
     def __init__(self, synapses: Optional[List[DistalSynapse]] = None) -> None:
+        """Create a segment optionally seeded with existing synapses."""
         self.synapses = synapses if synapses is not None else []
         self.sequence_segment = False  # True if learned in a predictive context
 
@@ -88,12 +91,15 @@ class Synapse:
     permanence: float
 
     def __init__(self, source_input: int, permanence: float) -> None:
+        """Keep the index of the input bit and the synapse permanence."""
         self.source_input = source_input
         self.permanence = permanence
 
 
 # Column class represents a column in the HTM Region
 class Column:
+    """Spatial pooler column tracking proximal synapses and temporal cells."""
+
     position: Tuple[int, int]
     potential_synapses: List[Synapse]
     boost: float
@@ -105,6 +111,7 @@ class Column:
     cells: List[Cell]  # added dynamically after region init
 
     def __init__(self, potential_synapses: List[Synapse], position: Tuple[int, int]):
+        """Initialise column state and derive connected synapses."""
         self.position = position
         self.potential_synapses = potential_synapses
         self.boost = 1.0
@@ -162,6 +169,7 @@ class TemporalPooler:
         cells_per_column: int,
         initial_synapses_per_column: int,
     ) -> None:
+        """Configure temporal pooler dimensions and bootstrap column structure."""
         # Explicitly store configured input size (must be provided)
         self.input_space_size = int(input_space_size)
         self.column_count = column_count
@@ -192,6 +200,7 @@ class TemporalPooler:
         column_count: int,
         initial_synapses_per_column: int,
     ) -> List[Column]:
+        """Create the spatial pooler columns laid out on a square grid."""
         columns: List[Column] = []
         grid_size = int(column_count**0.5)  # Assuming a square grid for simplicity
         for i in range(column_count):
@@ -621,6 +630,7 @@ class TemporalPooler:
     def best_matching_cell(
         self, column: Column, prev_t: int
     ) -> Tuple[Optional[Cell], Optional[Segment]]:
+        """Return the cell and segment with the greatest previous match score."""
         prev_active_cells = self.active_cells.get(prev_t, set())
         best_cell = None
         best_segment = None
@@ -642,6 +652,7 @@ class TemporalPooler:
         return best_cell, best_segment
 
     def _active_segments_of(self, cell: Cell, t: int) -> List[Segment]:
+        """Return segments on the cell that were active at timestep ``t``."""
         prev_active_cells = self.active_cells.get(t, set())
         active_list = []
         for seg in cell.segments:
@@ -657,6 +668,7 @@ class TemporalPooler:
         return self._active_segments_of(cell, self.current_t)
 
     def reinforce_segment(self, segment: Segment) -> None:
+        """Strengthen synapses on the learning segment using prior activity."""
         t = self.current_t  # internal time
         prev_active_cells = self.active_cells.get(t - 1, set())
         # Strengthen existing active synapses
@@ -674,6 +686,7 @@ class TemporalPooler:
         segment.sequence_segment = True
 
     def punish_segment(self, segment: Segment) -> None:
+        """Penalise synapses on segments that made incorrect predictions."""
         for syn in segment.synapses:
             syn.permanence = max(0.0, syn.permanence - PERMANENCE_DEC)
 
@@ -681,6 +694,7 @@ class TemporalPooler:
     def inhibition(
         self, columns: Sequence[Column], inhibition_radius: float
     ) -> List[Column]:
+        """Apply local inhibition and return the columns that remain active."""
         active_columns: List[Column] = []
         for c in columns:
             # Find neighbors of column c
@@ -705,6 +719,7 @@ class TemporalPooler:
 
     # Returns the k-th highest overlap value from a list of columns
     def kth_score(self, neighbors: Sequence[Column], k: int) -> float:
+        """Return the k-th highest overlap among neighbours or zero when absent."""
         if not neighbors:
             return 0
         ordered = sorted(neighbors, key=lambda x: x.overlap, reverse=True)
@@ -738,6 +753,7 @@ class TemporalPooler:
         _ = self.average_receptive_field_size(self.columns)
 
     def average_receptive_field_size(self, columns: Sequence[Column]) -> float:
+        """Compute the mean receptive field span across the provided columns."""
         total_receptive_field_size = 0
         count = 0
         for c in columns:

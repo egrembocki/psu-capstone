@@ -4,9 +4,9 @@ import random
 
 import mmh3
 
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+from BaseEncoder import BaseEncoder
 from dataclasses import dataclass
-from typing import List
+
 from SDR import SDR
 
 
@@ -49,7 +49,7 @@ class RDSEParameters:
     """
 
     size: int
-    activeBits: int
+    active_bits: int
     sparsity: float
     radius: float
     resolution: float
@@ -79,6 +79,21 @@ class RandomDistributedScalarEncoder(BaseEncoder):
     not allow for decoding SDRs into the inputs which likely created it.
     """
 
+    memberSize: int
+    """Total number of bits in the output SDR."""
+    activeBits: int
+    """Count of active bits assigned to every encoding."""
+    sparsity: float
+    """Configured sparsity ratio used to derive the active bit count."""
+    radius: float
+    """Encoding radius controlling overlap between neighbour values."""
+    resolution: float
+    """Minimum representable separation between distinct inputs."""
+    category: bool
+    """Indicates whether the encoder treats inputs as categorical."""
+    seed: int
+    """Seed value passed to the hashing function for reproducible outputs."""
+
     def __init__(self, parameters: RDSEParameters):
         """
         Initializes the RandomDistributedScalarEncoder with parameters.
@@ -91,7 +106,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         parameters = self.check_parameters(parameters)
 
         self.memberSize = parameters.size
-        self.activeBits = parameters.activeBits
+        self.activeBits = parameters.active_bits
         self.sparsity = parameters.sparsity
         self.radius = parameters.radius
         self.resolution = parameters.resolution
@@ -113,11 +128,10 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         if math.isnan(input_value):
             output.zero()
             return
-        if self.category:
-            if input_value != int(input_value) or input_value < 0:
-                raise ValueError(
-                    "Input to category encoder must be an unsigned integer"
-                )
+        if self.category and (input_value != int(input_value) or input_value < 0):
+            raise ValueError(
+                "Input to category encoder must be an unsigned integer"
+            )
 
         data = [0] * self.size
 
@@ -133,7 +147,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         # output.setSparse(data) #we may need setDense implemented for SDR class
 
     # After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(self, parameters: RDSEParameters):
+    def check_parameters(self, parameters: RDSEParameters) -> RDSEParameters:
         """
         Verifies the validity and consistency of the encoder's parameter configuration.
 
@@ -143,7 +157,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         assert parameters.size > 0
 
         num_active_args = 0
-        if parameters.activeBits > 0:
+        if parameters.active_bits > 0:
             num_active_args += 1
         if parameters.sparsity > 0:
             num_active_args += 1
@@ -174,16 +188,16 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
         if args.sparsity > 0:
             assert 0 <= args.sparsity <= 1
-            args.activeBits = int(round(args.size * args.sparsity))
-            assert args.activeBits > 0
+            args.active_bits = int(round(args.size * args.sparsity))
+            assert args.active_bits > 0
 
         if args.category:
             args.radius = 1
 
         if args.radius > 0:
-            args.resolution = args.radius / args.activeBits
+            args.resolution = args.radius / args.active_bits
         elif args.resolution > 0:
-            args.radius = args.activeBits * args.resolution
+            args.radius = args.active_bits * args.resolution
 
         while args.seed == 0:
             args.seed = random.getrandbits(32)
@@ -194,14 +208,14 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 # Tests
 params = RDSEParameters(
     size=1000,
-    activeBits=0,
+    active_bits=0,
     sparsity=0.10,
     radius=10,
     resolution=0,
     category=False,
     seed=0,
 )
-encoder = RandomDistributedScalarEncoder(params, dimensions=[params.size])
+encoder = RandomDistributedScalarEncoder(params)
 output = SDR(dimensions=[params.size])
 encoder.encode(66, output)
 print(output.sparse)

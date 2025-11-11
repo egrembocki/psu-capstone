@@ -90,6 +90,25 @@ class ScalarEncoder(BaseEncoder):
     continuously with the input value.
     """
 
+    minimum: float
+    """Inclusive lower bound on the scalar input domain."""
+    maximum: float
+    """Inclusive upper bound on the scalar input domain."""
+    clipInput: bool
+    """When True, clip out-of-range inputs before encoding."""
+    periodic: bool
+    """Flag indicating whether the domain is treated as circular."""
+    category: bool
+    """True when the encoder handles categorical integer inputs."""
+    activeBits: int
+    """Number of simultaneously active bits in each encoding."""
+    sparsity: float
+    """Fraction of total bits that remain active."""
+    radius: float
+    """Distance beyond which encodings cease to overlap."""
+    resolution: float
+    """Minimum difference that yields distinct encodings."""
+
     def __init__(self, parameters: ScalarEncoderParameters):
         """
         Initialize a :class:`ScalarEncoder` using the provided parameters.
@@ -168,7 +187,7 @@ class ScalarEncoder(BaseEncoder):
         output.setSparse(sparse)
 
     # After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(self, parameters: ScalarEncoderParameters):
+    def check_parameters(self, parameters: ScalarEncoderParameters) -> ScalarEncoderParameters:
         """
         TODO CCG is too High - SonarQube is flagging this method as too complex.
 

@@ -4,11 +4,11 @@ from math import ceil
 from time import mktime
 from typing import List
 import ScalarEncoder
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+from Project.src.main.EncoderLayer.BaseEncoder import BaseEncoder
 from datetime import datetime, timedelta, time
 import time
 
-from SDR_Encoder_Temp.SDR import SDR
+from Project.src.main.EncoderLayer.SDR import SDR
 
 
 @dataclass

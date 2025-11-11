@@ -14,7 +14,12 @@ class BaseEncoder(ABC):
         _size (int): Total number of bits produced by the encoder.
     """
 
-    def __init__(self):  # , dimensions: List[int] = None
+    _dimensions: List[int]
+    """Dimensions representing the shape of the encoded SDR output."""
+    _size: int
+    """Total number of bits produced by the encoder."""
+
+    def __init__(self) -> None:  # , dimensions: List[int] = None
         """
         Initialize the encoder metadata to empty defaults.
 
@@ -28,9 +33,9 @@ class BaseEncoder(ABC):
         self._dimensions: List[int] = []
         self._size: int = 0
 
-        # if dimensions is not None:
+        #    if dimensions is not None:
         #    self.initialize(dimensions)
-
+ 
     @property
     def dimensions(self) -> List[int]:
         """
@@ -51,7 +56,7 @@ class BaseEncoder(ABC):
         """
         return self._size
 
-    def initialize(self, dimensions: List[int]):
+    def initialize(self, dimensions: List[int]) -> None:
         """
         Configure the encoder with the provided dimensions.
 
@@ -64,7 +69,7 @@ class BaseEncoder(ABC):
         self._dimensions = list(dimensions)
         self._size = SDR(dimensions).size
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset any subclass-specific internal state.
 
@@ -73,7 +78,7 @@ class BaseEncoder(ABC):
         pass
 
     @abstractmethod
-    def encode(self, input_value, output):
+    def encode(self, input_value, output: SDR) -> None:
         """
         Encode an input value into the provided SDR container.
 
@@ -88,3 +93,9 @@ class BaseEncoder(ABC):
             NotImplementedError: Always, to enforce subclass implementation.
         """
         raise NotImplementedError("Subclasses must implement this method")
+
+# Example usage:
+# encoder = SomeConcreteEncoder(params)
+# output_sdr = SDR(dimensions=encoder.dimensions)
+# encoder.encode(input_value, output_sdr)
+    print("GOOD")

@@ -64,6 +64,7 @@ class DateEncoder(BaseEncoder):
     TIMEOFDAY = 5
 
     def __init__(self, parameters: DateEncoderParameters) -> None:
+        """Initialise all scalar sub-encoders and supporting metadata."""
         super().__init__()   # matches how ScalarEncoder calls BaseEncoder
         self.args = parameters
         # For API parity with C++ header
@@ -96,11 +97,13 @@ class DateEncoder(BaseEncoder):
     # ------------------------------------------------------------------ #
 
     def _log(self, msg: str) -> None:
+        """Emit verbose diagnostic messages when verbose mode is enabled."""
         if self.args.verbose:
             print("[DateEncoder] " + msg)
 
     @property
     def size(self) -> int:
+        """Total number of bits produced by the configured sub-encoders."""
         return self._size
 
     # ------------------------------------------------------------------ #
@@ -108,6 +111,7 @@ class DateEncoder(BaseEncoder):
     # ------------------------------------------------------------------ #
 
     def _initialize(self, parameters: DateEncoderParameters) -> None:
+        """Configure scalar encoders according to the supplied parameters."""
         args = parameters
         size = 0
         self.bucketMap.clear()
@@ -418,6 +422,7 @@ class DateEncoder(BaseEncoder):
     # ------------------------------------------------------------------ #
 
     def _holiday_value(self, t: time.struct_time) -> float:
+        """Return the holiday ramp value for the provided timestamp."""
         SECONDS_PER_DAY = 86400.0
         input_ts = time.mktime(t)
 
@@ -447,3 +452,21 @@ class DateEncoder(BaseEncoder):
         """Convenience to generate unix epoch seconds like the C++ static mktime."""
         dt = datetime(year, mon, day, hr, minute, sec)
         return time.mktime(dt.timetuple())
+
+
+if __name__ == "__main__":
+    params = DateEncoderParameters(
+        season_width=10,
+        dayOfWeek_width=5,
+        weekend_width=3,
+        holiday_width=4,
+        timeOfDay_width=6,
+        custom_width=3,
+        custom_days=["mon,wed,fri"],
+        verbose=True,
+    )
+    encoder = DateEncoder(parameters=params)
+    output = SDR(dimensions=[encoder.size])
+    encoder.encode(datetime.now(), output)
+    print("Output size:", output.size)
+    print("Active indices:", output.getSparse())

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from date_encoder import DateEncoder, DateEncoderParameters
+from Project.src.main.EncoderLayer.date_encoder import DateEncoder, DateEncoderParameters
 from SDR import SDR
 
 

@@ -17,9 +17,12 @@ from htm import TemporalPooler
 
 
 class Agent:
+    """Encode observations into sparse distributed representations using HTM poolers."""
+
     def __init__(
         self, L2: TemporalPooler | None = None, L5: TemporalPooler | None = None
     ):
+        """Initialise encoder hierarchies and optionally reuse provided poolers."""
         self.sdr_size = 64
         self.cells_per_column = 4
         self.sparsity = 0.1
@@ -54,13 +57,16 @@ class Agent:
 
     @property
     def observation_size(self):
+        """Total number of bits exposed through the SDR observation space."""
         return self.sdr_size * 2 * self.cells_per_column
 
     def encode_feature(self, feature_vector):
+        """Project a raw feature vector through the L2 pooler."""
         state = self.L2.run({"X": feature_vector})
         return state["predictive_cells"]
 
     def encode_location_and_feature(self, location_vector, feature_vector):
+        """Fuse location and feature encodings through the L5 pooler."""
         visual_feature_vector = self.encode_feature(feature_vector)
         input_data: Dict[str, Any] = {"G": location_vector, "F": visual_feature_vector}
         state = self.L5.run(input_data)
@@ -69,6 +75,8 @@ class Agent:
 
 
 class SDRFrozenLakeEnvironment:
+    """Gym-compatible environment that emits SDR-encoded observations."""
+
     def __init__(self, render_mode="human", size=8, agent: Agent | None = None):
         """
         Create an SDR-encoded wrapper around FrozenLake.
@@ -109,6 +117,7 @@ class SDRFrozenLakeEnvironment:
         }
 
     def _stimuli_to_obs(self, stimuli):
+        """Convert a FrozenLake tile index into the agent's SDR observation."""
         desc = getattr(self.env.env.unwrapped, "desc", None)
         if desc is not None:
             vision_sensor = str(desc.flatten()[stimuli], "utf-8")
@@ -124,6 +133,7 @@ class SDRFrozenLakeEnvironment:
         return np.array(encoded).flatten().tolist()
 
     def reset(self, seed=None):
+        """Reset the wrapped environment and return the SDR observation."""
         obs, reward, done, truncated, info, surrounding_tiles = self.env.reset(
             seed=seed
         )
@@ -131,14 +141,17 @@ class SDRFrozenLakeEnvironment:
         return obs, reward, done, truncated, info, surrounding_tiles
 
     def step(self, action):
+        """Step the wrapped environment and translate the observation to SDR."""
         obs, reward, done, truncated, info, surrounding_tiles = self.env.step(action)
         obs = self._stimuli_to_obs(obs)
         return obs, reward, done, truncated, info, surrounding_tiles
 
     def render(self):
+        """Render the underlying FrozenLake environment."""
         return self.env.render()
 
     def close(self):
+        """Release the underlying environment resources."""
         self.env.close()
 
 
@@ -146,9 +159,11 @@ class Environment(ABC):
     """Abstract base class for environments."""
 
     def __init__(self):
+        """Initialise the environment logger."""
         self.logger = get_logger(self.__class__.__name__)
 
     def execute(self, motor_commands):
+        """Run robot motor commands and collect the resulting stimuli."""
         if not motor_commands:
             self.logger.warning("No motor commands provided to execute.")
 
@@ -161,6 +176,7 @@ class Environment(ABC):
 
     @abstractmethod
     def run_commands(self, motor_commands):
+        """Execute the provided sequence of motor commands."""
         pass
 
     @abstractmethod
