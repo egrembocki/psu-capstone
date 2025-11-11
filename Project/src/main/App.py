@@ -18,10 +18,11 @@ def main() -> None:
 
     sp = SpatialPooler(input_space_size, column_count, initial_synapses_per_column)
     tm = TemporalMemory(sp.columns, cells_per_column)
+    rng = np.random.default_rng(seed=42)
 
     for t in range(steps):
-        input_vector = np.random.randint(2, size=input_space_size)
-        mask, active_cols = sp.compute_active_columns(input_vector, inhibition_radius)
+        input_vector = rng.integers(0, 2, size=input_space_size)
+        _, active_cols = sp.compute_active_columns(input_vector, inhibition_radius)
         tm.step(active_cols)
 
         if t == 0:

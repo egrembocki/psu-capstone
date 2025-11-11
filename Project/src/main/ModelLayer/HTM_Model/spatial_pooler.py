@@ -26,12 +26,12 @@ from .synapse import Synapse
 class SpatialPooler:
     """Spatial Pooler: maps input SDRs to active columns."""
 
-    InputField = Union[np.ndarray, Sequence[int]]
-    InputComposite = Union[
+    _input_field = Union[np.ndarray, Sequence[int]]
+    _input_composite = Union[
         np.ndarray,
         Sequence[int],
-        Sequence[InputField],
-        Dict[str, InputField],
+        Sequence[_input_field],
+        Dict[str, _input_field],
     ]
 
     def __init__(
@@ -39,31 +39,33 @@ class SpatialPooler:
         input_space_size: int,
         column_count: int,
         initial_synapses_per_column: int,
+        random_seed: int = 0,
     ) -> None:
         self.input_space_size: int = int(input_space_size)
         self.column_count: int = column_count
+        self.random_seed: int = random_seed
 
         self.columns: List[Column] = self._initialize_region(
             input_space_size,
             column_count,
             initial_synapses_per_column,
+            self.random_seed,
         )
 
         # Multi-field metadata for dict inputs
         self.field_ranges: Dict[str, Tuple[int, int]] = {}
         self.field_order: List[str] = []
         self.column_field_map: Dict[Column, str | None] = {}
-
-    # ---------- Region / column initialization ----------
-
     def _initialize_region(
         self,
         input_space_size: int,
         column_count: int,
         initial_synapses_per_column: int,
+        random_seed: int,
     ) -> List[Column]:
         columns: List[Column] = []
         grid_size = int(column_count ** 0.5)  # assume square grid
+        rng = np.random.default_rng(random_seed)
 
         for i in range(column_count):
             x = i % grid_size
@@ -71,8 +73,8 @@ class SpatialPooler:
             position = (x, y)
             potential_synapses = [
                 Synapse(
-                    int(np.random.randint(input_space_size)),
-                    float(np.random.uniform(0.4, 0.6)),
+                    int(rng.integers(input_space_size)),
+                    float(rng.uniform(0.4, 0.6)),
                 )
                 for _ in range(initial_synapses_per_column)
             ]
@@ -83,7 +85,7 @@ class SpatialPooler:
 
     # ---------- Input combination & field metadata ----------
 
-    def combine_input_fields(self, input_vector: InputComposite) -> np.ndarray:
+    def combine_input_fields(self, input_vector: _input_composite) -> np.ndarray:
         """Prepare / combine input fields into a single binary numpy array."""
         if isinstance(input_vector, dict):
             start = 0
@@ -124,8 +126,8 @@ class SpatialPooler:
     def _columns_from_raw_input(self, combined: np.ndarray) -> List[Column]:
         """Return columns that receive at least one active (1) bit via a connected synapse."""
         cols: List[Column] = []
-        active_indices = np.where(combined > 0)[0]
-        active_set = set(int(i) for i in active_indices)
+        active_indices = np.nonzero(combined > 0)[0]
+        active_set = {int(i) for i in active_indices}
         for col in self.columns:
             if any(s.source_input in active_set for s in col.connected_synapses):
                 cols.append(col)
@@ -157,7 +159,7 @@ class SpatialPooler:
 
     def compute_active_columns(
         self,
-        input_vector: InputComposite,
+        input_vector: _input_composite,
         inhibition_radius: float,
     ) -> tuple[np.ndarray, List[Column]]:
         """Compute active columns given an input SDR.
