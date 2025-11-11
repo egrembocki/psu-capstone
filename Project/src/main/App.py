@@ -1,15 +1,12 @@
 """Main application module for the project."""
 
-import pathlib as path
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-from typing import Tuple
 from EncoderLayer.Sdr import SDR
+from typing import Tuple
 
-ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
-DATA_PATH = ROOT_PATH / "Data"
-ENCODER_LAYER_PATH = ROOT_PATH / "src" / "main" / "EncoderLayer"
+
 
 
 def _sdr_to_grid(sdr: SDR) -> list[list[int]]:

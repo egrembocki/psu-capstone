@@ -5,14 +5,14 @@ exposes the same public surface while providing type aliases, validation
 helpers, and callback hooks that keep dense, sparse, and coordinate caches
 in sync with each other.
 """
-
 from __future__ import annotations
 
-from math import prod
 import random
-from typing import Callable, Iterable, List, Optional, Sequence
-from LogLayer.logLevel import nta_assert, nta_check
 
+
+from math import prod
+from typing import Callable, Iterable, List, Optional, Sequence
+from ..LogLayer.logLevel import nta_assert, nta_check
 
 # Type aliases mirroring the C++ implementation
 
@@ -730,3 +730,21 @@ class SDR:
             f"SDR(dimensions={self.__dimensions}, size={int(self.__size)}, "
             f"active={len(self.get_sparse())})"
         )
+
+
+if __name__ == "__main__":
+    sdr_one = SDR([10, 10])
+    sdr_two = SDR([10, 10])
+    sdr_three = SDR([10, 10])
+    sdr_cat = SDR([30, 10])
+
+    for label, sdr in (("SDR One", sdr_one), ("SDR Two", sdr_two), ("SDR Three", sdr_three)):
+        sdr.randomize(0.02)
+        print(f"{label}: {sdr}")
+
+    sdr_cat.concatenate([sdr_two, sdr_one, sdr_three], axis=0)
+    print("Union of SDR One, SDR Two, and SDR Three:", sdr_cat)
+
+    sdr_sparse = SDR([32, 64])
+    sdr_sparse.randomize(0.02)
+    print("Sparse SDR:", sdr_sparse)
