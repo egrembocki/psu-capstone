@@ -48,5 +48,8 @@ class InputHandler:
             return pd.DataFrame(lines)
         else:
             raise ValueError("Unsupported file type")
-        
 
+    def get_data(self) -> pd.DataFrame:
+        """Getter for the data attribute"""
+        return self._data
+     

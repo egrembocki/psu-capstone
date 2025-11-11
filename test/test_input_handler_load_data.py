@@ -128,11 +128,16 @@ def test_input_handler_is_singleton() -> None:
 
 
 def test_load_data_sets_internal_data(tmp_path: Path, handler: InputHandler) -> None:
+    """Test that load_data sets the internal _data attribute correctly."""
+
+    # Arrange
     csv_path = tmp_path / "sample.csv"
     csv_path.write_text("a,b\n1,2\n")
 
+    # Act
     df = handler.load_data(str(csv_path))
 
+    # Assert
     # get_data returns a new DataFrame copy
     df_copy = handler.get_data()
     assert isinstance(df_copy, pd.DataFrame)
