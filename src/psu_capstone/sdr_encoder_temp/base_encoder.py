@@ -1,0 +1,40 @@
+from abc import ABC, abstractmethod
+from typing import List
+
+<<<<<<< HEAD:SDR_Encoder_Temp/BaseEncoder.py
+=======
+from SDR import SDR
+
+>>>>>>> origin/main:src/psu_capstone/sdr_encoder_temp/base_encoder.py
+
+class BaseEncoder(ABC):
+
+    def __init__(self, dimensions: List[int] = None):
+        self._dimensions: List[int] = []
+        self._size: int = 0
+
+        if dimensions is not None:
+            self.initialize(dimensions)
+
+    #
+    # Members dimensions & size describe the shape of the encoded output SDR.
+    # This is the total number of bits in the result.
+    #
+    @property
+    def dimensions(self) -> List[int]:
+        return self._dimensions
+
+    @property
+    def size(self) -> int:
+        return self._size
+
+    def initialize(self, dimensions: List[int]):
+        self._dimensions = list(dimensions)
+        self._size = SDR(dimensions).size
+
+    def reset(self):
+        pass
+
+    @abstractmethod
+    def encode(self, input_value, output):
+        raise NotImplementedError("Subclasses must implement this method")

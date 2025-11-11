@@ -1,0 +1,389 @@
+name: 'Python Tests'
+description: 'Run pytest with support for pip (requirements.txt), Poetry (pyproject.toml), uv, and conda package managers'
+
+inputs:
+  package_manager:
+    description: 'Package manager to use for (uv, pip, poetry, conda, auto)'
+    required: false
+    default: 'auto'
+  test_path:
+    description: 'Path to the tests directory'
+    required: false
+    default: 'tests/'
+  pytest_args:
+    description: 'Additional pytest args'
+    required: false
+    default: '--verbose --tb=short'
+  coverage:
+    description: 'Whether to run coverage analysis'
+    required: false
+    default: 'true'
+  coverage_format:
+    description: 'Coverage report format (e.g., xml, html, term)'
+    required: false
+    default: 'term'
+  fail_on_error:
+    description: 'Fail the run if any tests fail'
+    required: false
+    default: 'true'
+  install_dev_dependencies:
+    description: 'Install development dependencies. Dependency groups for Poetry and uv can be passed here explicitly. Remember to prepend with --with or --group as needed.'
+    required: false
+    default: 'false'
+  generate_summary_package_manager_auto:
+    description: 'Generate a summary report for the detected package manager (if applicable)'
+    required: false
+    default: 'false'
+  show_configuration:
+    description: 'Show config details in the summary'
+    required: false
+    default: 'true'
+
+outputs:
+  test_status:
+    description: 'Status of the test run (pass/fail)'
+    value: ${{ steps.run_tests.outputs.status }}
+  coverage_percentage:
+    description: 'Test coverage percentage (if coverage is enabled)'
+    value: ${{ steps.run_tests.outputs.coverage_report }}
+  tests_count:
+    description: 'Total number of tests run'
+    value: ${{ steps.run_tests.outputs.tests_count }}
+  package_manager:
+    description: 'Detected package manager used for the tests'
+    value: ${{ steps.detect_package_manager.outputs.package_manager }}
+  detection_method:
+    description: 'Method used to detect the package manager'
+    value: ${{ steps.detect_package_manager.outputs.detection_method }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        # Validate inputs
+        # Validate package manager
+        if [[ ! "${{ inputs.package_manager }}" =~ ^(pip|poetry|uv|conda|auto)$ ]]; then
+          echo "Error: package_manager must be one of: pip, poetry, uv, conda, auto"
+          exit 1
+        fi
+
+        # Validate coverage format
+        if [[ ! "${{ inputs.coverage_format }}" =~ ^(xml|html|term)$ ]]; then
+          echo "Error: coverage_format must be one of: xml, html, term"
+          exit 1
+        fi
+
+    - name: Get Python version
+      id: python_version
+      shell: bash
+      run: |
+        # Get Python version
+        version=$(python --version 2>&1 | cut -d' ' -f2)
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "✅ Python version: $version"
+
+    - name: Detect Package Manager
+      id: detect_package_manager
+      uses: ./.github/actions/python-detect-package-manager
+      with:
+        package_manager: ${{ inputs.package_manager }}
+        project_path: '.'
+        fallback_manager: 'pip'
+        generate_summary: ${{ inputs.generate_summary_package_manager_auto }}
+    
+    - name: Install poetry 
+      if: steps.detect_package_manager.outputs.package_manager == 'poetry'
+      uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Install uv 
+      if: steps.detect_package_manager.outputs.package_manager == 'uv'
+      uses: astral-sh/setup-uv@85856786d1ce8acfbcc2f13a5f3fbd6b938f9f41
+      with:
+        version: "latest"
+    
+    - name: Setup conda
+      if: steps.detect_package_manager.outputs.package_manager == 'conda'
+      uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f
+      with:
+        python-version: ${{ steps.python_version.outputs.version }}
+        auto-activate-base: false
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        # Install dependencies based on detected package manager
+        pm="${{ steps.detect_package_manager.outputs.package_manager }}"
+        echo "Installing dependencies using $pm..."
+        if [[ "${{ inputs.install_dev_dependencies }}" == "true" ]]; then
+          dev_groups="dev"
+        else
+          dev_groups="${{ inputs.install_dev_dependencies }}"
+        fi
+
+        case $pm in
+          "pip")
+            python -m pip install --upgrade pip
+
+            # Install test dependencies
+            pip install pytest pytest-cov
+
+            #Install project dependencies
+            if [[ -f "pyproject.toml" ]]; then
+              pip install -e .
+              echo "✅ Installed project in editable mode"
+            elif [[ -f "requirements.txt" ]]; then
+              pip install -r requirements.txt
+              echo "✅ Installed dependencies from requirements.txt"
+            fi
+
+            # Install dev dependencies if specified
+            if [[ "${{ inputs.install_dev_dependencies }}" != "false" ]]; then
+              [[ -f "requirements-dev.txt" ]] && pip install -r requirements-dev.txt
+              [[ -f "dev-requirements.txt" ]] && pip install -r dev-requirements.txt
+              [[ -f "test-requirements.txt" ]] && pip install -r test-requirements.txt
+            fi
+            ;;
+
+          "poetry")
+            # Configure poetry
+            poetry config virtualenvs.create true
+            poetry config virtualenvs.in-project true
+
+            # Install dependencies
+            if [[ "${{ inputs.install_dev_dependencies }}" == "false" ]]; then
+              poetry install --only main
+            else
+              if [[ "$dev_groups" == "dev" ]]; then
+                poetry install
+              else
+                poetry install $dev_groups
+              fi
+            fi
+
+            # Install pytest if not in dependencies
+            poetry add --group dev pytest pytest-cov || echo "pytest already available"
+            echo "✅ Installed dependencies with Poetry"
+            ;;
+
+          "uv")
+            # Install dependencies
+            if [[ "${{ inputs.install_dev_dependencies }}" == "false" ]]; then
+              uv sync
+            else
+              if [[ "$dev_groups" == "dev" ]]; then
+                uv sync --dev
+              else
+                uv sync $dev_groups
+              fi
+            fi
+
+            # Install pytest if not in dependencies
+            uv add --dev pytest pytest-cov || echo "pytest already available"
+            echo "✅ Installed dependencies with uv"
+            ;;
+
+            "conda")
+              # Activate conda environment
+              source $CONDA/etc/profile.d/conda.sh
+
+              # Create or update environment
+              if [[ -f "environment.yml" ]]; then
+                conda env update -f environment.yml
+              elif [[ -f "conda.yml" ]]; then
+                conda env update -f conda.yml
+              else
+                # Create basic environment with test dependencies
+                conda create -n test-env python=${{ steps.python_version.outputs.version }} pytest pytest-cov -y
+                conda activate test-env
+              fi
+
+              # Install additional dev dependencies if specified
+              if [[ "${{ inputs.install_dev_dependencies }}" != "false" ]]; then
+                conda install pytest-xdist pytest-mock -y || echo "Additional packages not available"
+              fi
+
+              echo "✅ Installed dependencies with conda"
+              ;;
+          esac
+
+    - name: Verify test directory
+      shell: bash
+      run: |
+        # Verify test directory
+        if [[ ! -e "${{ inputs.test_path }}" ]]; then
+          echo "Warning: Test path '${{ inputs.test_path }}' does not exist."
+          echo "Looking for test files..."
+
+          # Try to find test files
+          test_files=$(find . -name "test_*.py" -a -not -path "*/.venv/*" -a -not -path "*/venv/*" -o -name "*_test.py" -a -not -path "*/.venv/*" -a -not -path "*/venv/*" | head -5)
+          if [[ -n "$test_files" ]]; then
+            echo "Found test files:"
+            echo "$test_files"
+          else
+            echo "No test files found. Creating a simple test structure..."
+            mkdir -p tests
+            echo "# No tests found - this is a placeholder" > tests/.gitkeep
+          fi
+          else
+            echo "✅ Test path '${{ inputs.test_path }}' exists."
+        fi
+
+    - name: Run Tests
+      id: run_tests
+      shell: bash
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # Run tests with pytest
+        pm="${{ steps.detect_package_manager.outputs.package_manager }}"
+        echo "Running tests using $pm..."
+
+        # Build pytest command
+        pytest_cmd="pytest --junitxml=junit.xml"
+        [[ "${{ inputs.coverage }}" == "true" ]] && pytest_cmd="$pytest_cmd --cov=."
+        [[ -n "${{ inputs.pytest_args }}" ]] && pytest_cmd="$pytest_cmd ${{ inputs.pytest_args }}"
+        [[ -e "${{ inputs.test_path }}" ]] && pytest_cmd="$pytest_cmd ${{ inputs.test_path }}"
+
+        # Add coverage format
+        if [[ "${{ inputs.coverage }}" == "true" ]]; then
+          case "${{ inputs.coverage_format }}" in
+            "xml")
+              pytest_cmd="$pytest_cmd --cov-report=xml --cov-report=term"
+              ;;
+            "html")
+              pytest_cmd="$pytest_cmd --cov-report=html --cov-report=term"
+              ;;
+            "term")
+              pytest_cmd="$pytest_cmd --cov-report=term-missing"
+              ;;
+          esac
+        fi
+
+        echo "Executing: $pytest_cmd"
+
+        # Run tests based on package manager
+        case $pm in
+          "pip")
+            if $pytest_cmd; then
+              echo "status=pass" >> $GITHUB_OUTPUT
+              echo "✅ Tests passed"
+            else
+              echo "status=fail" >> $GITHUB_OUTPUT
+              echo "❌ Tests failed"
+            fi
+            ;;
+          
+          "poetry")
+            if poetry run $pytest_cmd; then
+              echo "status=pass" >> $GITHUB_OUTPUT
+              echo "✅ Tests passed"
+            else
+              echo "status=fail" >> $GITHUB_OUTPUT
+              echo "❌ Tests failed"
+            fi
+            ;;
+
+          "uv")
+            if uv run $pytest_cmd; then
+              echo "status=pass" >> $GITHUB_OUTPUT
+              echo "✅ Tests passed"
+            else
+              echo "status=fail" >> $GITHUB_OUTPUT
+              echo "❌ Tests failed"
+            fi
+            ;;
+
+          "conda")
+            # Activate conda environment and run Tests
+            source $CONDA/etc/profile.d/conda.sh
+            if conda run -n test-env $pytest_cmd; then
+              echo "status=pass" >> $GITHUB_OUTPUT
+              echo "✅ Tests passed"
+            else
+              echo "status=fail" >> $GITHUB_OUTPUT
+              echo "❌ Tests failed"
+            fi
+            ;;
+        esac
+
+        # Extract coverage and test count if available
+        if [[ -f ".coverage" ]] && command -v coverage &> /dev/null; then
+          coverage_pct=$(coverage report --format=total 2>/dev/null || echo "0")
+          echo "coverage=$coverage_pct" >> $GITHUB_OUTPUT
+        fi
+
+        # Count tests (approximate from pytest output)
+        test_count=$(grep -E "([0-09]+) passed|([0-9]+) failed|([0-9]+) error" pytest.log 2>/dev/null | head -1 | grep -oE '[0-9]+' | head -1 || echo "0")
+        echo "test_count=$test_count" >> $GITHUB_OUTPUT
+
+    - name: Upload coverage reports
+      if: ${{ inputs.coverage == 'true' && inputs.coverage_format == 'xml' }}
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      with:
+        name: coverage-report
+        path: coverage.xml
+
+    - name: Summary
+      id: summary
+      shell: bash
+      run: |
+        # Summary
+        status="${{ steps.run_tests.outputs.status }}"
+        pm="${{ steps.detect_package_manager.outputs.package_manager }}"
+        detection_method="${{ steps.detect_package_manager.outputs.detection_method }}"
+
+        if [[ "$status" == "pass" ]]; then
+          icon="✅"
+        else
+          icon="❌"
+        fi
+
+        echo "## $icon Python Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Status:** $status" >> $GITHUB_STEP_SUMMARY
+        echo "**Python Version:** ${{ steps.python_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+        # Parse test and coverage reports using the dedicated script
+        export COVERAGE_ENABLED="${{ inputs.coverage }}"
+        export FALLBACK_TESTS_COUNT="${{ steps.run_tests.outputs.tests_count }}"
+        export FALLBACK_COVERAGE="${{ steps.run_tests.outputs.coverage_percentage }}"
+
+        # Make script executable and run it
+        chmod +x "${{ github.action_path }}/parse-reports.sh"
+        report_summary=$("${{ github.action_path }}/parse-reports.sh")
+
+        # Add the parsed summary to Github Step Summary
+        echo "$report_summary" >> $GITHUB_STEP_SUMMARY
+        
+        # Show configuration if enabled
+        if [[ "${{ inputs.show_configuration }}" == "true" ]]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Path:** \'${{ inputs.test_path }}\'" >> $GITHUB_STEP_SUMMARY
+          echo "- **Coverage:** ${{ inputs.coverage }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pytest Args:** \'${{ inputs.pytest_args }}\'" >> $GITHUB_STEP_SUMMARY
+
+          config_files="${{ steps.detect_package_manager.outputs.config_files }}"
+          if [[ -n "$config_files" ]]; then
+            echo "- **Config Files:** \'$config_files\'" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+    - name: Final status check
+      shell: bash
+      run: |
+        # Final status check
+        if [[ "${{ inputs.fail_on_error }}" == "true" && "${{ steps.run_tests.outputs.status }}" == "fail" ]]; then
+          echo "❌ Failing the action due to test failures."
+          exit 1
+        elif
+          [[ "${{ steps.run_tests.outputs.status }}" == "fail" ]]; then
+          echo "⚠️ Tests failed, but continuing on (fail_on_error=false)."
+        else
+          echo "✅ All tests passed successfully."
+        fi

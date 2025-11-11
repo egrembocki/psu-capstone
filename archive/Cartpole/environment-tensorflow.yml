@@ -1,4 +1,4 @@
-name: htmrlenv
+name: rl_env
 channels:
   - conda-forge
   - defaults
@@ -9,16 +9,11 @@ dependencies:
   - pandas          
   - pip:
       - tensorflow
-      - keras
+      - torch
       - gymnasium[classic_control]
-      - matplotlib         
+      - yfinance
+      - matplotlib
+      - jupyterlab
+      - seaborn
       - scikit-learn
       - stable-baselines3
-      - pdoc
-      - flake8
-      - black
-      - randomname
-      - openpyxl
-      - mmh3
-      
-      
