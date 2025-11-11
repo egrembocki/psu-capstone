@@ -1,0 +1,278 @@
+name: 'Python Detect Package manager'
+description: ' Automatically detect Python package manager (pip, poetry, uv, conda) based on project files. '
+inputs:
+  package_manager:
+    description: 'Override package manager detection (pip, poetry, uv, conda, auto)'
+    required: false
+    default: 'auto'
+  project_path:
+    description: 'Path to the project directory'
+    required: false
+    default: '.'
+  fallback_manager:
+    description: 'Fallback package manager if detection fails (pip, poetry, uv, conda)'
+    required: false
+    default: 'pip'
+  generate_summary:
+    description: 'Generate a summary of the detection results'
+    required: false
+    default: 'true'
+
+outputs:
+  package_manager:
+    description: 'Detected package manager (pip, poetry, uv, conda)'
+    value: ${{ steps.detect.outputs.package_manager }}
+  detection_method:
+    description: 'Method used for detection (auto, override, fallback)'
+    value: ${{ steps.detect.outputs.detection_method }}
+  config_files:
+    description: 'List of detected configuration files'
+    value: ${{ steps.detect.outputs.config_files }}
+  lock_files:
+    description: 'List of detected lock files'
+    value: ${{ steps.detect.outputs.lock_files }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        # Validate inputs
+        # Validate package manager
+        if [[ ! "${{ inputs.package_manager }}" =~ ^(pip|poetry|uv|conda|auto)$ ]]; then
+          echo "❌ Invalid package manager: ${{ inputs.package_manager }}. Must be one of: pip, poetry, uv, conda, auto."
+          exit 1
+        fi
+
+        # Validate fallback manager
+        if [[ ! "${{ inputs.fallback_manager }}" =~ ^(pip|poetry|uv|conda)$ ]]; then
+          echo "❌ Invalid fallback package manager: ${{ inputs.fallback_manager }}. Must be one of: pip, poetry, uv, conda."
+          exit 1
+        fi
+
+        # Validate project path exists
+        if [ ! -d "${{ inputs.project_path }}" ]; then
+          echo "❌ Project path does not exist: ${{ inputs.project_path }}"
+          exit 1
+        fi
+
+    - name: Detect Package Manager
+      id: detect
+      shell: bash
+      working-directory: ${{ inputs.project_path }}
+      run: |
+        # Detect Python package manager
+        pm="${{ inputs.package_manager }}"
+        fallback="${{ inputs.fallback_manager }}"
+        detection_method=""
+        config_files=()
+        lock_files=()
+        
+        echo "🔍 Detecting Python package manager in $(pwd)..."
+        echo "Input package manager: $pm"
+        echo "Fallback package manager: $fallback"
+
+        # Check for configuration files
+        [[ -f "pyproject.toml" ]] && config_files+=("pyproject.toml")
+        [[ -f "requirements.txt" ]] && config_files+=("requirements.txt")
+        [[ -f "environment.yml" ]] && config_files+=("environment.yml")
+        [[ -f "Pipfile" ]] && config_files+=("Pipfile")
+        [[ -f "setup.py" ]] && config_files+=("setup.py")
+        [[ -f "setup.cfg" ]] && config_files+=("setup.cfg")
+        [[ -f "conda.yml" ]] && config_files+=("conda.yml")
+
+        # Check for lock files
+        [[ -f "poetry.lock" ]] && lock_files+=("poetry.lock")
+        [[ -f "Pipfile.lock" ]] && lock_files+=("Pipfile.lock")
+        [[ -f "uv.lock" ]] && lock_files+=("uv.lock")
+
+        echo "Found config files: ${config_files[*]}"
+        echo "Found lock files: ${lock_files[*]}"
+
+        if [[ "$pm" != "auto" ]]; then
+          # Override mode - use specified package manager
+          detection_method="override"
+        else
+          # Auto-detection mode
+          echo "Starting auto-detection..."
+          detection_method="auto"
+
+          # Priority 1: Check for lock files (most reliable)
+          if [[ -f "poetry.lock" ]]; then
+            pm="poetry"
+            echo "Detected Poetry via poetry.lock"
+          elif [[ -f "uv.lock" ]]; then
+            pm="uv"
+            echo "Detected uv via uv.lock"
+          
+          # Priority 2: Check for conda environment file
+          elif [[ -f "environment.yml" || -f "conda.yml" ]]; then
+            pm="conda"
+            echo "Detected Conda via environment.yml/conda.yml file"
+
+          # Priority 3: Check for pyproject.toml
+          elif [[ -f "pyproject.toml" ]]; then
+            echo "Analyzing pyproject.toml content..."
+
+            # Check for Poetry configuration
+            if grep -q "^\[tool\.poetry\]" pyproject.toml; then
+              pm="poetry"
+              echo "Detected Poetry via [tool.poetry] section"
+            # Check for uv configuration
+            elif grep -q "^\[tool\.uv\]" pyproject.toml; then
+              pm="uv"
+              echo "Detected uv via [tool.uv] section"
+            # Check build system for poetry
+            elif grep -q "poetry\.core" pyproject.toml; then
+              pm="poetry"
+              echo "Detected Poetry via build-system.build-backend"
+
+            # Check for uv in dependencies or dev-dependencies
+            elif grep -q "uv" pyproject.toml; then
+              # Additional check to avoid false positives
+              if grep -E "^\[project\]|^\[build-system\]" pyproject.toml > /dev/null; then
+                pm="pip"
+                echo "Detected pip via standard pyproject.toml structure"
+              else
+                pm="uv"
+                echo "Detected uv via uv references in pyproject.toml"
+              fi
+
+            # Default to pip for standard pyproject.toml
+            else
+              pm="pip"
+              echo "Defaulting to pip for standard pyproject.toml"
+            fi
+
+            # Priority 4: check for other configuration files
+            elif [[ -f "Pipfile" ]]; then
+              pm="pip"
+              echo "Detected pip via Pipfile (pipenv)"
+
+            elif [[ -f "setup.py" || -f "setup.cfg" ]]; then
+              pm="pip"
+              echo "Detected pip via setup.py/setup.cfg"
+
+            elif [[ -f "requirements.txt" ]]; then
+              pm="pip"
+              echo "Detected pip via requirements.txt"
+
+            # Priority 5: Look for package manager executables in PATH
+            elif command -v conda &> /dev/null && [[ -d ".git" ]]; then
+              pm="conda"
+              echo "Detected Conda via conda executable in PATH"
+
+            elif command -v poetry &> /dev/null && [[ -d ".git" ]]; then
+              pm="poetry"
+              echo "Detected Poetry via poetry executable in PATH"
+
+            elif command -v uv &> /dev/null && [[ -d ".git" ]]; then
+              pm="uv"
+              echo "Detected uv via uv executable in PATH"
+            else
+              # No indicators found, use fallback
+              pm="$fallback"
+              detection_method="fallback"
+              echo "No package manager detected, falling back to $fallback"
+            fi
+        fi
+
+        # Validate detected package manager
+        if [[ ! "$pm" =~ ^(pip|poetry|uv|conda)$ ]]; then
+          echo "❌ Detected invalid package manager: $pm"
+          exit 1
+        fi  
+
+        # Set outputs
+        echo "package_manager=$pm" >> $GITHUB_OUTPUT
+        echo "detection_method=$detection_method" >> $GITHUB_OUTPUT
+
+        # Join arrays
+        IFS=',' eval 'config_files_str="${config_files[*]}"'
+        IFS=',' eval 'lock_files_str="${lock_files[*]}"'
+        echo "config_files=$config_files_str" >> $GITHUB_OUTPUT
+        echo "lock_files=$lock_files_str" >> $GITHUB_OUTPUT
+
+        # Output summary
+        case $detection_method in
+          "override")
+            echo "📦 Using specified package manager: $pm"
+            ;;
+          "auto")
+            echo "📦 Auto-detected package manager: $pm"
+            ;;  
+          "fallback")
+            echo "📦 No specific configuration found, falling back to package manager: $pm"
+            ;;
+        esac
+
+        echo "Detection summary:"
+        echo " - Package Manager: $pm"
+        echo " - Detection Method: $detection_method"
+        echo " - Config Files: $config_files_str"
+        echo " - Lock Files: $lock_files_str"
+
+    - name: Verify package manager availability
+      shell: bash
+      run: |
+        # Verify package manager availability
+        pm="${{ steps.detect.outputs.package_manager }}"
+        case $pm in
+          "poetry")
+            if ! command -v poetry &> /dev/null; then
+              echo "⚠️ Poetry is not installed or not available in PATH."
+              echo "Install poetry with: curl -sSL https://install.python-poetry.org | python3 -"
+            else
+              echo "✅ Poetry found: $(poetry --version)"
+            fi
+            ;;
+          "uv")
+            if ! command -v uv &> /dev/null; then
+              echo "⚠️ uv is not installed or not available in PATH."
+              echo "Install uv with: curl -sSL https://astral.sh/uv/install.sh | sh"
+            else
+              echo "✅ uv found: $(uv --version)"
+            fi
+            ;;
+          "conda")
+            if ! command -v conda &> /dev/null; then
+              echo "⚠️ Conda is not installed or not available in PATH."
+              echo "Install Miniconda from: https://docs.conda.io/en/latest/miniconda.html"
+            else
+              echo "✅ Conda found: $(conda --version)"
+            fi
+            ;;
+          "pip")
+            if ! command -v pip &> /dev/null; then
+              echo "⚠️ pip not found in PATH. This is unusual for Python installations."
+            else
+              echo "✅ pip found: $(pip --version)"
+            fi
+            ;;
+        esac
+
+    - name: Generate Detection Summary
+      if: ${{ inputs.generate_summary == 'true' }}
+      shell: bash
+      run: |
+        # Generate detection summary
+        pm="${{ steps.detect.outputs.package_manager }}"
+        method="${{ steps.detect.outputs.detection_method }}"
+
+        echo "## Package Manager Detection Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package Manager:** $pm" >> $GITHUB_STEP_SUMMARY
+        echo "- **Detection Method:** $method" >> $GITHUB_STEP_SUMMARY
+        echo "- **Project Path:** \'${{ inputs.project_path }}\'" >> $GITHUB_STEP_SUMMARY
+
+        config_files="${{ steps.detect.outputs.config_files }}"
+        lock_files="${{ steps.detect.outputs.lock_files }}"
+
+        if [[ -n "$config_files" ]]; then
+          echo "- **Configuration Files:** \'$config_files\'" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ -n "$lock_files" ]]; then
+          echo "- **Lock Files:** \'$lock_files\'" >> $GITHUB_STEP_SUMMARY
+        fi

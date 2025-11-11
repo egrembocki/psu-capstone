@@ -1,0 +1,96 @@
+[project]
+name = "psu-capstone"
+version = "0.0.0"
+authors = [
+    { name = "PSU Capstone Team" },
+]
+description = "PSU Capstone Project"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[dependency-groups]
+dev = ["mypy>=1.17.0", "snakeviz>=2.2.2", "pre-commit>=4.2.0"]
+tests = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "pytest-mock>=3.14.0"]
+linters = ["flake8>=7.3.0", "flake8-pyproject>=1.2.3", "pep8-naming>=0.15.1"]
+formatters = ["black>=23.7.0", "isort>=6.0.1"]
+
+[project.scripts]
+psu-capstone = "psu_capstone:main"
+
+[tool.uv]
+package = true
+
+###############
+#### Tests ####
+###############
+
+[tool.pytest.ini_options]
+# addopts = ["--cov-report=term-missing", "--cov-report=xml", "tests/"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
+nonrecursedirs = "build"
+
+[tool.coverage]
+[tool.coverage.run]
+omit = [
+  # omit anything in a .local directory anywhere
+  '*/.local/*',
+  '*/__init__.py',
+  'tests/*',
+  '*/tests/*',
+  '.venv/*',
+]
+
+[tool.coverage.report]
+skip_empty = true
+exclude_lines = [
+  "def __init__*",
+  "def __",
+  "@abstractmethod",
+  "pragma: no cover",
+]
+
+############################
+### Linters & Formatters ###
+############################
+[tool.black]
+line-length = 100
+extend-exclude = '''
+/(
+  # Exclude template directories
+  # Standard exclusions
+  | \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+ignore_missing_imports = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[tool.flake8]
+max-line-length = 100
+ignore = ["E501", "F401", "W503", "C901", "N803"]
+exclude = [
+  ".venv",
+  ".git",
+  ".github",
+  "__pycache__",
+  "build",
+  "dist",
+  "experiments",
+  "examples",
+  "docs",
+  ".vscode",
+]
