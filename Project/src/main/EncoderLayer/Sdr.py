@@ -5,6 +5,7 @@ exposes the same public surface while providing type aliases, validation
 helpers, and callback hooks that keep dense, sparse, and coordinate caches
 in sync with each other.
 """
+
 from __future__ import annotations
 
 import random
@@ -19,7 +20,9 @@ elem_dense = int  #: Dense element type used for storing SDR bits.
 elem_sparse = int  #: Sparse index type mirroring the C++ implementation.
 sdr_dense_t = List[elem_dense]  #: Alias for the dense SDR container type.
 sdr_sparse_t = List[elem_sparse]  #: Alias for the sparse SDR container type.
-sdr_coordinate_t = List[List[int]]  #: Alias representing coordinates grouped per dimension.
+sdr_coordinate_t = List[
+    List[int]
+]  #: Alias representing coordinates grouped per dimension.
 sdr_callback_t = Callable[[], None]  #: Callback signature invoked on SDR state changes.
 
 
@@ -100,7 +103,9 @@ class SDR:
         invalidates cached sparse/coordinate views before notifying callbacks.
         """
 
-        assert len(self._dense) == int(self.__size), "Dense buffer size does not match SDR size."
+        assert len(self._dense) == int(
+            self.__size
+        ), "Dense buffer size does not match SDR size."
 
         self._dense = [elem_dense(int(val)) for val in self._dense]
 
@@ -120,11 +125,15 @@ class SDR:
             for i in range(len(self._sparse) - 1)
         ), "Sparse data must be sorted!"
         if self._sparse:
-            assert int(self._sparse[-1]) < int(self.__size), "Sparse index out of bounds!"
+            assert int(self._sparse[-1]) < int(
+                self.__size
+            ), "Sparse index out of bounds!"
 
         previous = None
         for idx in self._sparse:
-            assert previous is None or int(idx) != int(previous), "Sparse data must not contain duplicates!"
+            assert previous is None or int(idx) != int(
+                previous
+            ), "Sparse data must not contain duplicates!"
             previous = idx
 
         self._sparse = [elem_sparse(int(val)) for val in self._sparse]
@@ -141,11 +150,15 @@ class SDR:
         canonical coordinate ordering.
         """
 
-        assert len(self._coordinates) == len(self.__dimensions), "Coordinate data must match SDR dimensionality!"
+        assert len(self._coordinates) == len(
+            self.__dimensions
+        ), "Coordinate data must match SDR dimensionality!"
 
         expected_length = len(self._coordinates[0]) if self._coordinates else 0
         for dim_index, coord_vec in enumerate(self._coordinates):
-            assert len(coord_vec) == expected_length, "All coordinate vectors must share the same length!"
+            assert (
+                len(coord_vec) == expected_length
+            ), "All coordinate vectors must share the same length!"
             limit = int(self.__dimensions[dim_index])
             for idx in coord_vec:
                 assert int(idx) < limit, "Coordinate index out of bounds!"
@@ -199,7 +212,9 @@ class SDR:
 
         new_dims = [int(dim) for dim in new_dimensions]
         new_size = prod(int(dim) for dim in new_dims)
-        assert new_size == int(self.__size), "Total size must remain constant when reshaping SDR."
+        assert new_size == int(
+            self.__size
+        ), "Total size must remain constant when reshaping SDR."
 
         self.__dimensions = new_dims
         self._coordinates_valid = False
@@ -221,7 +236,9 @@ class SDR:
     def set_dense(self, dense: Iterable[int]) -> None:
         """Replace contents with a dense iterable after validating its length."""
         dense_list = list(dense)
-        assert len(dense_list) == int(self.__size), "Input dense array size does not match SDR size."
+        assert len(dense_list) == int(
+            self.__size
+        ), "Input dense array size does not match SDR size."
 
         temp = [elem_dense(int(val)) for val in dense_list]
         self._dense, temp = temp, self._dense
@@ -244,7 +261,9 @@ class SDR:
         Performs bounds checking, computes the flattened index, and returns
         the stored dense byte without mutating caches.
         """
-        assert len(coordinates) == len(self.__dimensions), "Number of coordinates must match dimensionality."
+        assert len(coordinates) == len(
+            self.__dimensions
+        ), "Number of coordinates must match dimensionality."
 
         flat_index = 0
         stride = 1
@@ -342,7 +361,9 @@ class SDR:
         Raises:
             AssertionError: If the SDRs do not share the same dimensions.
         """
-        assert self.__dimensions == other.get_dimensions(), "SDRs must have matching dimensions to compute overlap."
+        assert (
+            self.__dimensions == other.get_dimensions()
+        ), "SDRs must have matching dimensions to compute overlap."
 
         self_sparse = set(map(int, self.get_sparse()))
         other_sparse = set(map(int, other.get_sparse()))
@@ -369,9 +390,9 @@ class SDR:
         while i < len(inputs):
             sdr = inputs[i]
             assert sdr is not None, INPUT_SDR_NONE_MSG
-            assert sdr.get_dimensions() == self.__dimensions, (
-                "All SDRs must share dimensions for intersection."
-            )
+            assert (
+                sdr.get_dimensions() == self.__dimensions
+            ), "All SDRs must share dimensions for intersection."
             if sdr is self:
                 inplace = True
                 inputs[i] = inputs[-1]
@@ -406,7 +427,9 @@ class SDR:
                 if dim_idx == axis_index:
                     concat_axis_size += int(dim_in)
                 else:
-                    assert int(dim_in) == int(dim_self), "All non-axis dimensions must match for concatenate."
+                    assert int(dim_in) == int(
+                        dim_self
+                    ), "All non-axis dimensions must match for concatenate."
         return concat_axis_size
 
     def set_union(self, sdrs: List["SDR"]) -> None:
@@ -427,9 +450,9 @@ class SDR:
         while i < len(inputs):
             sdr = inputs[i]
             assert sdr is not None, INPUT_SDR_NONE_MSG
-            assert sdr.get_dimensions() == self.__dimensions, (
-                "All SDRs must share dimensions for union."
-            )
+            assert (
+                sdr.get_dimensions() == self.__dimensions
+            ), "All SDRs must share dimensions for union."
             if sdr is self:
                 inplace = True
                 inputs[i] = inputs[-1]
@@ -471,9 +494,9 @@ class SDR:
 
         concat_axis_size = self._validate_concatenate_inputs(inputs, axis_index)
 
-        assert concat_axis_size == int(self.__dimensions[axis_index]), (
-            "Concatenation axis dimensions do not sum to output size."
-        )
+        assert concat_axis_size == int(
+            self.__dimensions[axis_index]
+        ), "Concatenation axis dimensions do not sum to output size."
 
         buffers = [list(sdr.get_dense()) for sdr in inputs]
         row_lengths: List[int] = []
@@ -598,8 +621,8 @@ class SDR:
         """Stochastically move active bits while preserving the overall sparsity."""
         assert 0.0 <= fraction_noise <= 1.0, "Noise fraction must be within [0, 1]."
         assert (
-            (1.0 + fraction_noise) * self.get_sparsity() <= 1.0
-        ), "Noise would exceed SDR capacity."
+            1.0 + fraction_noise
+        ) * self.get_sparsity() <= 1.0, "Noise would exceed SDR capacity."
 
         num_move_bits = int(round(fraction_noise * int(self.get_sum())))
         if num_move_bits == 0:
@@ -608,14 +631,18 @@ class SDR:
         rng = rng or random.Random()
 
         sparse_values = list(map(int, self.get_sparse()))
-        assert len(sparse_values) >= num_move_bits, "Not enough active bits to turn off."
+        assert (
+            len(sparse_values) >= num_move_bits
+        ), "Not enough active bits to turn off."
         turn_off = rng.sample(sparse_values, num_move_bits)
 
         dense = self.get_dense()
         off_population = [
             idx for idx in range(int(self.__size)) if int(dense[idx]) == 0
         ]
-        assert len(off_population) >= num_move_bits, "Not enough inactive bits to turn on."
+        assert (
+            len(off_population) >= num_move_bits
+        ), "Not enough inactive bits to turn on."
         turn_on = rng.sample(off_population, num_move_bits)
 
         for idx in turn_on:
@@ -678,7 +705,11 @@ if __name__ == "__main__":
     sdr_three = SDR([10, 10])
     sdr_cat = SDR([30, 10])
 
-    for label, sdr in (("SDR One", sdr_one), ("SDR Two", sdr_two), ("SDR Three", sdr_three)):
+    for label, sdr in (
+        ("SDR One", sdr_one),
+        ("SDR Two", sdr_two),
+        ("SDR Three", sdr_three),
+    ):
         sdr.randomize(0.02)
         print(f"{label}: {sdr}")
 

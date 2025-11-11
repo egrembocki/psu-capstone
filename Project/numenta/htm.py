@@ -124,7 +124,7 @@ class Column:
         self.overlap = float(overlap * self.boost) if overlap >= MIN_OVERLAP else 0.0
         print(f"Column at position {self.position} has overlap: {self.overlap}")
 
-  
+
 class TemporalPooler:
     """Prototype Spatial Pooler + simplified Temporal Memory.
 
