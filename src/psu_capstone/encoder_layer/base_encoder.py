@@ -1,19 +1,22 @@
 from abc import ABC, abstractmethod
-from SDR import SDR
+from typing_extensions import Self
+from psu_capstone.encoder_layer.sdr import SDR
 from typing import List
+
 
 class BaseEncoder(ABC):
 
-    def __init__(self, dimensions: List[int] = None):
+   # def __new__(cls) -> Self:
+       # raise TypeError("Cannot instantiate abstract class")
+ 
+
+    def __init__(self, dimensions: List[int] = []):
         self._dimensions: List[int] = []
         self._size: int = 0
 
         if dimensions is not None:
             self.initialize(dimensions)
-     #
-     # Members dimensions & size describe the shape of the encoded output SDR.
-     # This is the total number of bits in the result.
-     #
+
     @property
     def dimensions(self) -> List[int]:
         return self._dimensions
@@ -24,10 +27,10 @@ class BaseEncoder(ABC):
 
     def initialize(self, dimensions: List[int]):
         self._dimensions = list(dimensions)
-        self._size = SDR(dimensions).size
+        self._size = SDR(dimensions).__size
 
     def reset(self):
-        pass
+        raise NotImplementedError("Not implemented yet")
 
     @abstractmethod
     def encode(self, input_value, output):

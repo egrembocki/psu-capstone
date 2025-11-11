@@ -1,12 +1,17 @@
+"""Scalar Encoder implementation for encoding scalar values into Sparse Distributed Representations (SDRs)."""
+
+
 from typing import List
+from typing_extensions import Self
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from SDR import SDR
+from psu_capstone.encoder_layer.sdr import SDR
 from dataclasses import dataclass
 import math
-import numpy as np
 
 @dataclass
 class ScalarEncoderParameters:
+    """Parameters for the Scalar Encoder."""
+    
     minimum: float
     maximum: float
     clipInput: bool
@@ -18,7 +23,13 @@ class ScalarEncoderParameters:
     radius: float
     resolution: float
 
+
 class ScalarEncoder(BaseEncoder):
+
+    def __new__(cls, parameters: ScalarEncoderParameters, dimensions: List[int]) -> Self:
+        """Create a new instance of ScalarEncoder."""
+        
+        return super().__new__(cls)
 
     def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
         super().__init__(dimensions)
@@ -36,7 +47,7 @@ class ScalarEncoder(BaseEncoder):
         self.resolution = parameters.resolution
 
     def encode(self, input_value: float, output: SDR) -> None:
-        assert output.size == self.size, "Output SDR size does not match encoder size."
+        assert output.__size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
             output.zero()
@@ -61,18 +72,24 @@ class ScalarEncoder(BaseEncoder):
         start = int(round((input_value - self.minimum) / self.resolution))
 
         if not self.periodic:
-            start = min(start, output.size - self.activeBits)
+            start = min(start, output.__size - self.activeBits)
 
         sparse = list(range(start, start + self.activeBits))
 
         if self.periodic:
-            sparse = [bit % output.size for bit in sparse]
+            sparse = [bit % output.__size for bit in sparse]
             sparse.sort()
 
-        output.setSparse(sparse)
+        output.set_sparse(sparse)
+
+
+
+
+
+
 
 #After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(self, parameters: ScalarEncoderParameters):
+    def check_parameters(self, parameters: ScalarEncoderParameters) -> ScalarEncoderParameters:
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([
             parameters.activeBits >0,
@@ -136,34 +153,3 @@ class ScalarEncoder(BaseEncoder):
         args.sparsity = args.activeBits / float(args.memberSize)
         assert args.sparsity > 0
         return args
-
-
-#Tests
-params = ScalarEncoderParameters(
-    minimum = 0,
-    maximum = 100,
-    clipInput = False,
-    periodic = False,
-    category = False,
-    activeBits = 21,
-    sparsity = 0,
-    memberSize = 500,
-    radius = 0,
-    resolution = 0
-)
-'''encoder = ScalarEncoder(params ,dimensions=[100])
-sdr = SDR(dimensions=[10, 10])
-print(sdr.size)
-sdr.setSparse([0,5,22,99])
-print(sdr.getSparse())
-sdr.zero()
-print(sdr.getSparse())
-
-encoder2 = ScalarEncoder(params ,dimensions=[100])
-print(encoder2.size)
-print(encoder2.dimensions)'''
-
-encoder3 = ScalarEncoder(params ,dimensions=[params.memberSize])
-output = SDR(dimensions=[params.memberSize])
-encoder3.encode(7.3, output)
-print(output.getSparse())

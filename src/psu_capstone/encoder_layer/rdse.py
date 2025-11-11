@@ -7,7 +7,7 @@ import mmh3
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from dataclasses import dataclass
 from typing import List
-from SDR import SDR
+from psu_capstone.encoder_layer.sdr import SDR
 
 @dataclass
 class RDSEParameters:
