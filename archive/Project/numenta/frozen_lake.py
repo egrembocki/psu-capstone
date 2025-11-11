@@ -1,9 +1,6 @@
 import sys
-from pathlib import Path
-from numenta.utils import get_logger
 from abc import ABC, abstractmethod
-
-sys.path.append(str(Path(__file__).parents[1]))
+from pathlib import Path
 
 import gymnasium as gym
 from gymnasium import spaces

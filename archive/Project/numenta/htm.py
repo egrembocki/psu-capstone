@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import numpy as np
 import random
 from typing import (
-    List,
-    Set,
     Dict,
-    Tuple,
+    List,
     Optional,
     Sequence,
+    Set,
+    Tuple,
     Union,
 )
+
+import numpy as np
 
 # Constants (Spatial Pooler)
 CONNECTED_PERM = (

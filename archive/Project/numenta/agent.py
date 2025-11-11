@@ -1,19 +1,17 @@
 import sys
-
-from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Dict, Any
-from numenta.utils import get_logger
-
-sys.path.append(str(Path(__file__).parents[1]))
+from pathlib import Path
+from typing import Any, Dict
 
 import numpy as np
 from gymnasium import spaces
+from htm import TemporalPooler
 from numenta.frozen_lake import FrozenLakeEnvironment, GymAdapter
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from htm import TemporalPooler
+sys.path.append(str(Path(__file__).parents[1]))
+
 
 
 class Agent:
@@ -112,8 +110,7 @@ class SDRFrozenLakeEnvironment:
             features = [b"S", b"F", b"H", b"G"]
 
         self.feature_map = {
-            str(feature, "utf-8"): np.random.permutation(self.agent.sdr)
-            for feature in features
+            str(feature, "utf-8"): np.random.permutation(self.agent.sdr) for feature in features
         }
 
     def _stimuli_to_obs(self, stimuli):
