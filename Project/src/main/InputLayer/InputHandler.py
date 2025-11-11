@@ -1,14 +1,16 @@
+"""InputHandler singleton to pass a Data object to the Encoder layer.
+Implemented as a singleton  layer handler for now, with methods to convert raw data to
+DataFrame, sequence, etc.
+TODO : make a logger class to log messages instead of print statements.
+"""
+
+
 import datetime
 import pandas as pd
 import numpy as np
 import os
 
 from typing import Union
-
-
-"""InputHandler singleton to pass a Data object to the Encoder layer.
-Implemented as a singleton  layer handler for now, with methods to convert raw data to
-DataFrame, sequence, etc."""
 
 
 class InputHandler:
@@ -85,6 +87,9 @@ class InputHandler:
     ) -> pd.DataFrame:
         """Explicitly convert input data to a pandas DataFrame"""
 
+        assert isinstance(data, (pd.DataFrame, list, bytearray, np.ndarray)), (
+            "Data must be a DataFrame, list, bytearray, or numpy ndarray."
+        )
         temp_data: pd.DataFrame
 
         if isinstance(data, pd.DataFrame):
@@ -109,6 +114,9 @@ class InputHandler:
     ) -> list:
         """Convert raw data to a normalized sequence list with guaranteed date metadata."""
 
+        assert isinstance(data, (list, bytearray, bytes, np.ndarray, str)), (
+            "Data must be a list, bytearray, bytes, numpy ndarray, or string."
+        )
         if isinstance(data, np.ndarray):
             iterable = data.tolist()
         elif isinstance(data, (bytearray, bytes)):
