@@ -8,6 +8,7 @@ from typing import Union
 
 """InputHandler singleton to pass a Data object to the Encoder layer. Implemented as a singleton layer handler for now, with methods to convert raw data to DataFrame, sequence, etc."""
 
+
 class InputHandler:    
     """
     Singleton InputHandler class to handle input data.

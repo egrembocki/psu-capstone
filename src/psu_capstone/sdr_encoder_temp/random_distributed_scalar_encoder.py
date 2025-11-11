@@ -1,23 +1,24 @@
 import math
-import struct
 import random
-
-import mmh3
-
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+import struct
 from dataclasses import dataclass
 from typing import List
+
+import mmh3
 from SDR import SDR
+from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+
 
 @dataclass
 class RDSEParameters:
     size: int
-    activeBits: int
+    active_bits: int
     sparsity: float
     radius: float
     resolution: float
     category: bool
     seed: int
+
 
 class RandomDistributedScalarEncoder(BaseEncoder):
     def __init__(self, parameters: RDSEParameters, dimensions: List[int]):
@@ -25,7 +26,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         parameters = self.check_parameters(parameters)
 
         self.memberSize = parameters.size
-        self.activeBits = parameters.activeBits
+        self.active_bits = parameters.activeBits
         self.sparsity = parameters.sparsity
         self.radius = parameters.radius
         self.resolution = parameters.resolution
@@ -45,18 +46,16 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
         index = int(input_value / self.resolution)
 
-        for offset in range(self.activeBits):
+        for offset in range(self.active_bits):
             hash_buffer = index + offset
-            bucket = mmh3.hash(struct.pack('I', hash_buffer), self.seed, signed=False)
+            bucket = mmh3.hash(struct.pack("I", hash_buffer), self.seed, signed=False)
             bucket = bucket % self.size
             data[bucket] = 1
 
         output.setDense(data)
-        #output.setSparse(data) #we may need setDense implemented for SDR class
+        # output.setSparse(data) #we may need setDense implemented for SDR class
 
-
-
-#After encode we may need a check_parameters method since most of the encoders have this
+    # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: RDSEParameters):
         assert parameters.size > 0
 
@@ -67,7 +66,9 @@ class RandomDistributedScalarEncoder(BaseEncoder):
             num_active_args += 1
 
         assert num_active_args != 0, "Missing argument, need one of: 'activeBits' or 'sparsity'."
-        assert num_active_args == 1, "Too many arguments, choose only one of: 'activeBits' or 'sparsity'."
+        assert (
+            num_active_args == 1
+        ), "Too many arguments, choose only one of: 'activeBits' or 'sparsity'."
 
         num_resolution_args = 0
         if parameters.radius > 0:
@@ -77,8 +78,12 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         if parameters.resolution > 0:
             num_resolution_args += 1
 
-        assert num_resolution_args != 0, "Missing argument, need one of: 'radius', 'resolution', 'category'."
-        assert num_resolution_args == 1, "Too many arguments, choose only one of: 'radius', 'resolution', 'category'."
+        assert (
+            num_resolution_args != 0
+        ), "Missing argument, need one of: 'radius', 'resolution', 'category'."
+        assert (
+            num_resolution_args == 1
+        ), "Too many arguments, choose only one of: 'radius', 'resolution', 'category'."
 
         args = parameters
 
@@ -101,15 +106,9 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         return args
 
 
-#Tests
+# Tests
 params = RDSEParameters(
-    size = 1000,
-    activeBits = 0,
-    sparsity = .10,
-    radius = 10,
-    resolution = 0,
-    category = False,
-    seed = 0
+    size=1000, activeBits=0, sparsity=0.10, radius=10, resolution=0, category=False, seed=0
 )
 encoder = RandomDistributedScalarEncoder(params, dimensions=[params.size])
 output = SDR(dimensions=[params.size])
