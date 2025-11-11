@@ -85,9 +85,9 @@ def main() -> None:
     sdr_three = SDR([10, 10])
     sdr_cat = SDR([30, 10])
 
-    sdr_one.randomize(0.20)
-    sdr_two.randomize(0.20)
-    sdr_three.randomize(0.20)
+    sdr_one.randomize(0.02)
+    sdr_two.randomize(0.02)
+    sdr_three.randomize(0.02)
 
     print("SDR One:")
     print(sdr_one)
@@ -101,7 +101,7 @@ def main() -> None:
     print(sdr_cat)
 
     sdr_sparse = SDR([32, 64])
-    sdr_sparse.randomize(0.20)
+    sdr_sparse.randomize(0.02)
 
     print("Sparse SDR:")
     print(sdr_sparse)
