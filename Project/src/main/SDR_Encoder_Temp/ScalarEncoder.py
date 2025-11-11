@@ -1,6 +1,6 @@
 """Scalar encoder utilities for converting scalars into Sparse Distributed Representations."""
 
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+from BaseEncoder import BaseEncoder
 from SDR import SDR
 from dataclasses import dataclass
 import math

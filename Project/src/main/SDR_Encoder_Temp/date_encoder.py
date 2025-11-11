@@ -1,3 +1,5 @@
+"""Date encodeer 2.0 for HTM, ported to Python from the C++ implementation."""
+
 from __future__ import annotations
 
 import time
@@ -7,7 +9,7 @@ from typing import List, Dict, Set, Union
 
 from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 from SDR_Encoder_Temp.SDR import SDR
-from SDR_Encoder_Temp.ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
+from ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
 from dataclasses import dataclass, field
 
 
@@ -41,7 +43,7 @@ class DateEncoderParameters:
     verbose: bool = False
 
 
-class DateEncoder(BaseEncoder):
+class DateEncoder(BaseEncoder.BaseEncoder):
     """
     Python port of the HTM DateEncoder, using the existing ScalarEncoder + SDR.
     Encodes up to 6 attributes of a timestamp into one SDR:
