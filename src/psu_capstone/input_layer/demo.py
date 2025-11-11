@@ -1,6 +1,6 @@
 """Driver code to test InputHandler functionality."""
 
-import InputLayer.InputHandler as ih
+import psu_capstone.input_layer.InputHandler as ih
 import pathlib as path
 import os
 import datetime as dt
