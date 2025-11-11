@@ -1,0 +1,166 @@
+name: 'Python Format Check'
+description: 'Format Python code using black and isort with configurable options'
+inputs:
+  isort_args:
+    description: 'Additional arguments to pass to isort'
+    required: false
+    default: '--check-only --diff --profile black --line-length=100'
+  black_args:
+    description: 'Additional arguments to pass to black'
+    required: false
+    default: '--check --diff --line-length=100'
+  ruff_enabled:
+    description: 'Enable ruff linting and formatting'
+    required: false
+    default: 'false'
+  ruff_args:
+    description: 'Additional arguments to pass to ruff'
+    required: false
+    default: '--check --diff'
+  source_path:
+    description: 'Path to the source code directory'
+    required: false
+    default: '.'
+  fail_on_error:
+    description: 'Fail the run if any formatting issues are found'
+    required: false
+    default: 'true'
+
+outputs:
+  isort_status:
+    description: 'Status of isort formatting check (pass/fail)'
+    value: ${{ steps.isort_check.outputs.status }}
+  black_status:
+    description: 'Status of black formatting check (pass/fail)'
+    value: ${{ steps.black_check.outputs.status }}
+  ruff_status:
+    description: 'Status of ruff formatting check (pass/fail)'
+    value: ${{ steps.ruff_check.outputs.status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install formatting tools
+      shell: bash
+      run: |
+        # Install formatting failed_tools
+        python -m pip install --upgrade pip
+
+        # Install isort and black
+        pip install isort black
+
+        # Conditionally install ruff
+        if [ "${{ inputs.ruff_enabled }}" = "true" ]; then
+          pip install ruff
+          echo "✅ Ruff installed"
+        else
+          echo "⏩ Ruff not enabled, skipping installation"
+        fi
+
+    - name: Run isort check
+      id: isort_check
+      shell: bash
+      run: |
+        # Run isort check
+        echo "Running isort check..."
+
+        if isort ${{ inputs.source_path }} ${{ inputs.isort_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ isort check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ isort check failed"
+        fi
+
+    - name: Run black formatting check
+      id: black_check
+      shell: bash
+      run: |
+        # Run black formatting check
+        echo "Running black formatting check..."
+
+        if black ${{ inputs.source_path }} ${{ inputs.black_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ black formatting check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ black formatting check failed"
+        fi
+      
+    - name: Run ruff formatting check
+      id: ruff_check
+      if: inputs.ruff_enabled == 'true'
+      shell: bash
+      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
+      run: |
+        # Run ruff formatting check
+        echo "Running ruff formatting check..."
+
+        if ruff ${{ inputs.source_path }} ${{ inputs.ruff_args }}; then
+          echo "status=pass" >> $GITHUB_OUTPUT
+          echo "✅ ruff formatting check passed"
+        else
+          echo "status=fail" >> $GITHUB_OUTPUT
+          echo "❌ ruff formatting check failed"
+        fi
+    
+    - name: Summary
+      shell: bash
+      run: |
+        # Summary
+        echo "## Python Formatting Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Tool | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Black | ${{ steps.black_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Isort | ${{ steps.isort_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ inputs.ruff_enabled }}" = "true" ]; then
+          echo "| Ruff | ${{ steps.ruff_check.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Ruff | Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Check status and fail if needed
+      id: status_check
+      shell: bash
+      run: |-
+        # Check status and fail if needed
+        black_status="${{ steps.black_check.outputs.status }}"
+        isort_status="${{ steps.isort_check.outputs.status }}"
+        ruff_status="${{ steps.ruff_check.outputs.status }}"
+
+        # initialize overall status as passed
+        overall_status="pass"
+        failed_tools=()
+
+        # Check black and isort
+        if [[ "$black_status" != "pass" ]]; then
+          overall_status="failed"
+          failed_tools+=("Black")
+        fi
+
+        if [[ "$isort_status" != "pass" ]]; then
+          overall_status="failed"
+          failed_tools+=("Isort")
+        fi
+
+        # Check ruff status if enabled
+        if [ "${{ inputs.ruff_enabled }}" == "true" ] && "ruff_status" != "pass" ]; then
+          overall_status="failed"
+          failed_tools+=("Ruff")
+        fi
+
+        # Report results
+        if [[ "$overall_status" == "pass" ]]; then
+          echo "🚀 All enabled formatting checks passed successfully!"
+        else
+          echo "❌ Formatting checks failed for: ${failed_tools[*]}"
+
+          # Fail the action if fail_on_error is true
+          if [ "${{ inputs.fail_on_error }}" == "true" ]; then
+            echo "Failing the action due to Formatting errors (fail_on_error=true)"
+            exit 1
+          else
+            echo "Continuing the action despite formatting errors (fail_on_error=false)"
+          fi
+        fi

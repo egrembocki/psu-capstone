@@ -1,0 +1,38 @@
+# Configuration for the GitHub Labeler action
+# This file defines labels to be automatically applied to pull requests
+
+# File based labels
+'documentation':
+  - changed-files:
+    - any-glob-to-any-file: ['docs/**', '**/*.md']
+
+'tests':
+  - changed-files:
+    - any-glob-to-any-file: ['tests/**', '**/*test*.py']
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['pyproject.toml', 'uv.lock']
+
+# Version labels based on file patterns AND branch names following Convential Commits
+# https://www.conventionalcommits.org/en/v1.0.0/
+
+'version:patch':
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.py', '**/tests/**']
+    - all-globs-to-all-files: ['!docs/**', '!**/*.md']
+  - head-branch: ['^fix/', '^bugfix/', '^hotfix/', '^docs/', '^tests/', '^test/', '^refactor/',
+                  '^chore/', '^style/', '^perf/', '^performance/', 'fix-', 'bugfix-', 'hotfix-',
+                  'docs-', 'tests-', 'test-', 'refactor-', 'chore-', 'style-', 'perf-', 'performance-']
+
+'version:minor':
+  - head-branch: ['^feat', 'feat-', '^feature/', 'feature-']
+
+'version:major':
+  - changed-files:
+    - any-glob-to-any-file: ['**/BREAKING_CHANGES*']
+  - head-branch: ['breaking', '!-', '-breaking-', '/breaking/', 'major-']
+
+# Breaking change detection
+'breaking-change':
+  - head-branch: ['breaking', '!-', '-breaking-', '/breaking/', 'major-']
