@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from SDR_Encoder_Temp.date_encoder import DateEncoder, DateEncoderParameters
-from SDR_Encoder_Temp.SDR import SDR
+from date_encoder import DateEncoder, DateEncoderParameters
+from SDR import SDR
 
 
 if __name__ == "__main__":
