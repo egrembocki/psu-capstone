@@ -1,12 +1,10 @@
 """Main application module for the project."""
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 
+from matplotlib.colors import ListedColormap
 from EncoderLayer.Sdr import SDR
 from typing import Tuple
-
-
 
 
 def _sdr_to_grid(sdr: SDR) -> list[list[int]]:

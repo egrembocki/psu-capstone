@@ -12,7 +12,6 @@ import random
 
 from math import prod
 from typing import Callable, Iterable, List, Optional, Sequence
-from ..LogLayer.logLevel import nta_assert, nta_check
 
 # Type aliases mirroring the C++ implementation
 
@@ -20,9 +19,7 @@ elem_dense = int  #: Dense element type used for storing SDR bits.
 elem_sparse = int  #: Sparse index type mirroring the C++ implementation.
 sdr_dense_t = List[elem_dense]  #: Alias for the dense SDR container type.
 sdr_sparse_t = List[elem_sparse]  #: Alias for the sparse SDR container type.
-sdr_coordinate_t = List[
-    List[int]
-]  #: Alias representing coordinates grouped per dimension.
+sdr_coordinate_t = List[List[int]]  #: Alias representing coordinates grouped per dimension.
 sdr_callback_t = Callable[[], None]  #: Callback signature invoked on SDR state changes.
 
 
@@ -61,7 +58,7 @@ class SDR:
             AssertionError: If no dimensions are provided.
         """
         self.__dimensions: List[int] = [int(dim) for dim in dimensions]
-        nta_check(len(self.__dimensions) > 0, "SDR must have at least one dimension.")
+        assert len(self.__dimensions) > 0, "SDR must have at least one dimension."
 
         self.__size: int = prod(int(dim) for dim in self.__dimensions)
 
@@ -103,10 +100,7 @@ class SDR:
         invalidates cached sparse/coordinate views before notifying callbacks.
         """
 
-        nta_assert(
-            len(self._dense) == int(self.__size),
-            "Dense buffer size does not match SDR size.",
-        )
+        assert len(self._dense) == int(self.__size), "Dense buffer size does not match SDR size."
 
         self._dense = [elem_dense(int(val)) for val in self._dense]
 
@@ -121,25 +115,16 @@ class SDR:
         refreshes cached dense/coordinate views and triggers callbacks.
         """
 
-        nta_assert(
-            all(
-                int(self._sparse[i]) <= int(self._sparse[i + 1])
-                for i in range(len(self._sparse) - 1)
-            ),
-            "Sparse data must be sorted!",
-        )
+        assert all(
+            int(self._sparse[i]) <= int(self._sparse[i + 1])
+            for i in range(len(self._sparse) - 1)
+        ), "Sparse data must be sorted!"
         if self._sparse:
-            nta_assert(
-                int(self._sparse[-1]) < int(self.__size),
-                "Sparse index out of bounds!",
-            )
+            assert int(self._sparse[-1]) < int(self.__size), "Sparse index out of bounds!"
 
         previous = None
         for idx in self._sparse:
-            nta_assert(
-                previous is None or int(idx) != int(previous),
-                "Sparse data must not contain duplicates!",
-            )
+            assert previous is None or int(idx) != int(previous), "Sparse data must not contain duplicates!"
             previous = idx
 
         self._sparse = [elem_sparse(int(val)) for val in self._sparse]
@@ -156,23 +141,14 @@ class SDR:
         canonical coordinate ordering.
         """
 
-        nta_assert(
-            len(self._coordinates) == len(self.__dimensions),
-            "Coordinate data must match SDR dimensionality!",
-        )
+        assert len(self._coordinates) == len(self.__dimensions), "Coordinate data must match SDR dimensionality!"
 
         expected_length = len(self._coordinates[0]) if self._coordinates else 0
         for dim_index, coord_vec in enumerate(self._coordinates):
-            nta_assert(
-                len(coord_vec) == expected_length,
-                "All coordinate vectors must share the same length!",
-            )
+            assert len(coord_vec) == expected_length, "All coordinate vectors must share the same length!"
             limit = int(self.__dimensions[dim_index])
             for idx in coord_vec:
-                nta_assert(
-                    int(idx) < limit,
-                    "Coordinate index out of bounds!",
-                )
+                assert int(idx) < limit, "Coordinate index out of bounds!"
 
         self._coordinates = [
             [elem_sparse(int(idx)) for idx in coord_vec]
@@ -223,10 +199,7 @@ class SDR:
 
         new_dims = [int(dim) for dim in new_dimensions]
         new_size = prod(int(dim) for dim in new_dims)
-        nta_check(
-            new_size == int(self.__size),
-            "Total size must remain constant when reshaping SDR.",
-        )
+        assert new_size == int(self.__size), "Total size must remain constant when reshaping SDR."
 
         self.__dimensions = new_dims
         self._coordinates_valid = False
@@ -248,10 +221,7 @@ class SDR:
     def set_dense(self, dense: Iterable[int]) -> None:
         """Replace contents with a dense iterable after validating its length."""
         dense_list = list(dense)
-        nta_assert(
-            len(dense_list) == int(self.__size),
-            "Input dense array size does not match SDR size.",
-        )
+        assert len(dense_list) == int(self.__size), "Input dense array size does not match SDR size."
 
         temp = [elem_dense(int(val)) for val in dense_list]
         self._dense, temp = temp, self._dense
@@ -274,15 +244,12 @@ class SDR:
         Performs bounds checking, computes the flattened index, and returns
         the stored dense byte without mutating caches.
         """
-        nta_assert(
-            len(coordinates) == len(self.__dimensions),
-            "Number of coordinates must match dimensionality.",
-        )
+        assert len(coordinates) == len(self.__dimensions), "Number of coordinates must match dimensionality."
 
         flat_index = 0
         stride = 1
         for dim_size, coord in zip(reversed(self.__dimensions), reversed(coordinates)):
-            nta_assert(int(coord) < int(dim_size), "Coordinate out of bounds.")
+            assert int(coord) < int(dim_size), "Coordinate out of bounds."
             flat_index += int(coord) * stride
             stride *= int(dim_size)
         return self.get_dense()[flat_index]
@@ -375,10 +342,7 @@ class SDR:
         Raises:
             AssertionError: If the SDRs do not share the same dimensions.
         """
-        nta_assert(
-            self.__dimensions == other.get_dimensions(),
-            "SDRs must have matching dimensions to compute overlap.",
-        )
+        assert self.__dimensions == other.get_dimensions(), "SDRs must have matching dimensions to compute overlap."
 
         self_sparse = set(map(int, self.get_sparse()))
         other_sparse = set(map(int, other.get_sparse()))
@@ -397,17 +361,16 @@ class SDR:
             AssertionError: If fewer than two SDRs are provided or if any SDR
             has incompatible dimensions.
         """
-        nta_check(len(sdrs) >= 2, "Intersection requires at least two SDRs.")
+        assert len(sdrs) >= 2, "Intersection requires at least two SDRs."
 
         inputs = list(sdrs)
         inplace = False
         i = 0
         while i < len(inputs):
             sdr = inputs[i]
-            nta_check(sdr is not None, INPUT_SDR_NONE_MSG)
-            nta_check(
-                sdr.get_dimensions() == self.__dimensions,
-                "All SDRs must share dimensions for intersection.",
+            assert sdr is not None, INPUT_SDR_NONE_MSG
+            assert sdr.get_dimensions() == self.__dimensions, (
+                "All SDRs must share dimensions for intersection."
             )
             if sdr is self:
                 inplace = True
@@ -436,20 +399,14 @@ class SDR:
         """Validate concatenate inputs and return the combined size along the chosen axis."""
         concat_axis_size = 0
         for sdr in inputs:
-            nta_check(sdr is not None, "Input SDR cannot be None.")
+            assert sdr is not None, "Input SDR cannot be None."
             dims = sdr.get_dimensions()
-            nta_check(
-                len(dims) == len(self.__dimensions),
-                "Input dimensionality mismatch.",
-            )
+            assert len(dims) == len(self.__dimensions), "Input dimensionality mismatch."
             for dim_idx, (dim_in, dim_self) in enumerate(zip(dims, self.__dimensions)):
                 if dim_idx == axis_index:
                     concat_axis_size += int(dim_in)
                 else:
-                    nta_check(
-                        int(dim_in) == int(dim_self),
-                        "All non-axis dimensions must match for concatenate.",
-                    )
+                    assert int(dim_in) == int(dim_self), "All non-axis dimensions must match for concatenate."
         return concat_axis_size
 
     def set_union(self, sdrs: List["SDR"]) -> None:
@@ -462,17 +419,16 @@ class SDR:
             AssertionError: If fewer than two SDRs are provided or if any SDR
             has incompatible dimensions.
         """
-        nta_check(len(sdrs) >= 2, "Union requires at least two SDRs.")
+        assert len(sdrs) >= 2, "Union requires at least two SDRs."
 
         inputs = list(sdrs)
         inplace = False
         i = 0
         while i < len(inputs):
             sdr = inputs[i]
-            nta_check(sdr is not None, INPUT_SDR_NONE_MSG)
-            nta_check(
-                sdr.get_dimensions() == self.__dimensions,
-                "All SDRs must share dimensions for union.",
+            assert sdr is not None, INPUT_SDR_NONE_MSG
+            assert sdr.get_dimensions() == self.__dimensions, (
+                "All SDRs must share dimensions for union."
             )
             if sdr is self:
                 inplace = True
@@ -508,16 +464,15 @@ class SDR:
             AssertionError: If fewer than two inputs are provided, if the axis
             is invalid, or if input dimensions are incompatible with ``self``.
         """
-        nta_check(len(inputs) >= 2, "Not enough inputs to concatenate.")
+        assert len(inputs) >= 2, "Not enough inputs to concatenate."
 
         axis_index = int(axis)
-        nta_check(0 <= axis_index < len(self.__dimensions), "Axis out of bounds.")
+        assert 0 <= axis_index < len(self.__dimensions), "Axis out of bounds."
 
         concat_axis_size = self._validate_concatenate_inputs(inputs, axis_index)
 
-        nta_check(
-            concat_axis_size == int(self.__dimensions[axis_index]),
-            "Concatenation axis dimensions do not sum to output size.",
+        assert concat_axis_size == int(self.__dimensions[axis_index]), (
+            "Concatenation axis dimensions do not sum to output size."
         )
 
         buffers = [list(sdr.get_dense()) for sdr in inputs]
@@ -575,12 +530,10 @@ class SDR:
             AssertionError: If the handle is invalid or already removed.
         """
         idx = int(index)
-        nta_check(
-            0 <= idx < len(self.__callbacks),
+        assert 0 <= idx < len(self.__callbacks), (
             "SparseDistributedRepresentation::removeCallback, Invalid Handle!",
         )
-        nta_check(
-            self.__callbacks[idx] is not None,
+        assert self.__callbacks[idx] is not None, (
             "SparseDistributedRepresentation::removeCallback, Callback already removed!",
         )
         self.__callbacks[idx] = None
@@ -611,12 +564,10 @@ class SDR:
             AssertionError: If the handle is invalid or already removed.
         """
         idx = int(index)
-        nta_check(
-            0 <= idx < len(self.__destroy_callbacks),
+        assert 0 <= idx < len(self.__destroy_callbacks), (
             "SparseDistributedRepresentation::removeDestroyCallback, Invalid Handle!",
         )
-        nta_check(
-            self.__destroy_callbacks[idx] is not None,
+        assert self.__destroy_callbacks[idx] is not None, (
             "SparseDistributedRepresentation::removeDestroyCallback, "
             "Callback already removed!",
         )
@@ -627,7 +578,7 @@ class SDR:
     # ------------------------------------------------------------------
     def randomize(self, sparsity: float, rng: Optional[random.Random] = None) -> None:
         """Populate the SDR with random active bits drawn at the requested sparsity."""
-        nta_assert(0.0 <= sparsity <= 1.0, "Sparsity must be within [0, 1].")
+        assert 0.0 <= sparsity <= 1.0, "Sparsity must be within [0, 1]."
 
         size = int(self.__size)
         nbits = max(0, min(size, int(round(size * float(sparsity)))))
@@ -645,14 +596,10 @@ class SDR:
         self, fraction_noise: float, rng: Optional[random.Random] = None
     ) -> None:
         """Stochastically move active bits while preserving the overall sparsity."""
-        nta_assert(
-            0.0 <= fraction_noise <= 1.0,
-            "Noise fraction must be within [0, 1].",
-        )
-        nta_check(
-            (1.0 + fraction_noise) * self.get_sparsity() <= 1.0,
-            "Noise would exceed SDR capacity.",
-        )
+        assert 0.0 <= fraction_noise <= 1.0, "Noise fraction must be within [0, 1]."
+        assert (
+            (1.0 + fraction_noise) * self.get_sparsity() <= 1.0
+        ), "Noise would exceed SDR capacity."
 
         num_move_bits = int(round(fraction_noise * int(self.get_sum())))
         if num_move_bits == 0:
@@ -661,20 +608,14 @@ class SDR:
         rng = rng or random.Random()
 
         sparse_values = list(map(int, self.get_sparse()))
-        nta_assert(
-            len(sparse_values) >= num_move_bits,
-            "Not enough active bits to turn off.",
-        )
+        assert len(sparse_values) >= num_move_bits, "Not enough active bits to turn off."
         turn_off = rng.sample(sparse_values, num_move_bits)
 
         dense = self.get_dense()
         off_population = [
             idx for idx in range(int(self.__size)) if int(dense[idx]) == 0
         ]
-        nta_assert(
-            len(off_population) >= num_move_bits,
-            "Not enough inactive bits to turn on.",
-        )
+        assert len(off_population) >= num_move_bits, "Not enough inactive bits to turn on."
         turn_on = rng.sample(off_population, num_move_bits)
 
         for idx in turn_on:
@@ -686,8 +627,7 @@ class SDR:
 
     def kill_cells(self, fraction: float, seed: int = 0) -> None:
         """Deactivate a random subset of bits, seeded for deterministic selection."""
-        nta_check(0.0 <= fraction <= 1.0, "Kill fraction must be within [0, 1].")
-
+        assert 0.0 <= fraction <= 1.0, "Kill fraction must be within [0, 1]."
         size = int(self.__size)
         nkill = int(round(size * fraction))
         if nkill == 0:
