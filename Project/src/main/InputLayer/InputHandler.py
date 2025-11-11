@@ -104,7 +104,9 @@ class InputHandler:
         self._fill_missing_values(temp_data)
         return temp_data
 
-    def raw_to_sequence(self, data: Union[list, bytearray, bytes, np.ndarray, str]) -> list:
+    def raw_to_sequence(
+        self, data: Union[list, bytearray, bytes, np.ndarray, str]
+    ) -> list:
         """Convert raw data to a normalized sequence list with guaranteed date metadata."""
 
         if isinstance(data, np.ndarray):
@@ -163,9 +165,7 @@ class InputHandler:
     def validate_data(self) -> bool:
         """Validate the input data"""
 
-        assert isinstance(
-            self._data, pd.DataFrame
-        ), "Data is not a DataFrame."
+        assert isinstance(self._data, pd.DataFrame), "Data is not a DataFrame."
         if self._data.empty:
             print("DataFrame is empty.")
             return False

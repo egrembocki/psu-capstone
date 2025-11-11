@@ -24,34 +24,29 @@ test_inputs: dict[str, Union[list, bytearray, bytes, np.ndarray]] = {
         42,
         "foo",
     ],
-
     # 2) List with date only -> should convert to datetime at midnight
     "list_with_date": [
         dt.date(2025, 1, 2),
         3.14,
         "bar",
     ],
-
     # 3) List with pandas Timestamp
     "list_with_timestamp": [
         pd.Timestamp("2025-01-02T03:04:05"),
         {"a": 1},
     ],
-
     # 4) List with ISO date string -> should parse as datetime
     "list_with_iso_string": [
         "2025-01-02T03:04:05",
         "2024-12-31",
         99,
     ],
-
     # 5) List with NON-ISO string -> should not be treated as date
     "list_with_non_iso_string": [
         "not-a-date",
-        "2025/01/02",      # fails fromisoformat
+        "2025/01/02",  # fails fromisoformat
         123,
     ],
-
     # 6) List with no date-like values -> should prepend now() ISO string
     "list_without_date": [
         1,
@@ -60,19 +55,14 @@ test_inputs: dict[str, Union[list, bytearray, bytes, np.ndarray]] = {
         "abc",
         b"\x01\x02",
     ],
-
     # 7) Numpy array of plain values -> uses np.ndarray branch, no dates
     "numpy_array_no_dates": np.array([10, 20, 30]),
-
     # 8) Numpy array with an ISO string inside -> one date, rest unchanged
     "numpy_array_with_iso": np.array(["2025-01-02T03:04:05", "x", "y"], dtype=object),
-
     # 9) Bytearray input -> hits bytearray/bytes branch, values are ints 0-255
     "bytearray_data": bytearray(b"\x01\x02\x03\x04"),
-
     # 10) Bytes input -> same branch as bytearray
     "bytes_data": b"\x10\x20\x30",
-
     # 11) Mixed list that includes several datetime-like forms
     "mixed_many_dates": [
         "2025-01-02T03:04:05",
