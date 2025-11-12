@@ -80,7 +80,7 @@ class ScalarEncoder(BaseEncoder):
         self.resolution = parameters.resolution
 
     def encode(self, input_value: float, output: SDR) -> bool:
-        assert output.__size == self.size, "Output SDR size does not match encoder size."
+        assert output._size == self.size, "Output SDR size does not match encoder size."
 
         self.__sdr = output
 
@@ -106,12 +106,12 @@ class ScalarEncoder(BaseEncoder):
         start = int(round((input_value - self.minimum) / self.resolution))
 
         if not self.periodic:
-            start = min(start, output.__size - self.activeBits)
+            start = min(start, output._size - self.activeBits)
 
         sparse = list(range(start, start + self.activeBits))
 
         if self.periodic:
-            sparse = [bit % output.__size for bit in sparse]
+            sparse = [bit % output._size for bit in sparse]
             sparse.sort()
 
         output.set_sparse(sparse)
