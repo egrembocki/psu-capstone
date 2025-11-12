@@ -11,8 +11,6 @@ def sdr_fixture():
 
 
 def test_sdr_creation():
-    assert sdr.at_byte([1, 1]) == 1
-
     """Test SDR creation and basic properties."""
    
     # Arrange
@@ -26,7 +24,7 @@ def test_sdr_creation():
     assert sdr.size == 10
     assert sdr.get_sparse() == []
 
-
+    
 def test_sdr_initialization_and_properties(sdr_fixture):
     # Arrange
     sdr = sdr_fixture
@@ -86,6 +84,8 @@ def test_sdr_at_byte(sdr_fixture):
     sdr.set_dense([1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
     # Act & Assert
     assert sdr.at_byte([0, 0]) == 1
+    assert sdr.at_byte([1, 1]) == 1
+
 
 def test_sdr_set_sdr(sdr_fixture):
     # Arrange
