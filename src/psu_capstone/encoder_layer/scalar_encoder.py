@@ -37,6 +37,8 @@ class ScalarEncoderParameters:
 
     # active_bits_or_sparsity: Union[int, float] = 0
     # member_size_or_radius_or_category_or_resolution: Union[int, float, bool, double] = 0
+    # active_bits_or_sparsity: Union[int, float] = 0
+    # member_size_or_radius_or_category_or_resolution: Union[int, float, bool, double] = 0
 
     """perfect use case for a union : either int or float : active_bits xor sparsity
     perfect use case for a union : int or float or bool or double : member_size xor radius xor category xor resolution"""
