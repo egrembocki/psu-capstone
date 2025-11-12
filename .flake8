@@ -3,4 +3,16 @@ max-line-length = 120
 extend-ignore =
     E203
     W503
+    N818
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    .venv,
+    venv,
+    .eggs,
+    *.egg-info,
+    archive,
+    docs
     
