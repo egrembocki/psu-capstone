@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List
 
 from typing_extensions import Self
 
