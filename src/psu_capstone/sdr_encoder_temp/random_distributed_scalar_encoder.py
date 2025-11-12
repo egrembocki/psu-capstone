@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from typing import List
 
 import mmh3
-from SDR import SDR
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
+
+# from SDR import SDR
+# from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 
 
 @dataclass
