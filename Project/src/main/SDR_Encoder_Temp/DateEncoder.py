@@ -168,7 +168,6 @@ class DateEncoder(BaseEncoder):
         size = 0
         bucket_map = {}
         buckets = []
-        custom_days_set = set()
 
         #Season Attribute
         if args.season_width != 0:
