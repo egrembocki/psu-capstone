@@ -50,10 +50,16 @@ update: ## Update dependencies
 	@uv lock --upgrade
 	@echo "✅ Dependencies updated"
 
-test:
-  @echo "🧪 Running tests with coverage..."    
-  @set PYTHONPATH=src && uv run pytest --cov="psu_capstone" --cov-report=term-missing --cov-report=html:htmlcov --durations=0 --disable-warnings tests/
-  @echo "✅ Tests complete. Coverage report: htmlcov/index.html"
+test: ## Run tests with coverage
+	@echo "🧪 Running tests with coverage..."
+	@PYTHONPATH=src/ uv run pytest \
+			--cov="psu_capstone" \
+			--cov-report=term-missing \
+			--cov-report=html:htmlcov \
+			--durations=0 \
+			--disable-warnings \
+			tests/
+	@echo "✅ Tests complete. Coverage report: htmlcov/index.html"
 
 
 setup-uv-windows: ## Install uv package manager on Windows
