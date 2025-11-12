@@ -7,18 +7,23 @@ help: ## Show this help message
 	@echo ""
 	@echo "Quick start: 'make install'"
 
-install: ## Install package and pre-commit hooks
+ifeq ($(OS),Windows_NT)
+install: ## Install package and pre-commit hooks (Windows)
 	@echo "📦 Installing package in editable mode..."
 	@uv sync --all-groups
-	@if ! git rev-parse --git-dir >/dev/null 2>&1; then \
-		echo "⚠️ Git repository not initialized. Initializing..."; \
-		git init; \
-		git branch -m main; \
-		echo "✅ Git repository initialized with main branch"; \
-	fi
+	@git rev-parse --git-dir >nul 2>&1 || (echo "⚠️ Git repository not initialized. Initializing..." && git init && git branch -m main && echo "✅ Git repository initialized with main branch")
 	@echo "🔧 Setting up pre-commit hooks..."
 	@uv run pre-commit install
 	@echo "✅ Installation complete"
+else
+install: ## Install package and pre-commit hooks (Unix)
+	@echo "📦 Installing package in editable mode..."
+	@uv sync --all-groups
+	@git rev-parse --git-dir >/dev/null 2>&1 || (echo "⚠️ Git repository not initialized. Initializing..." && git init && git branch -m main && echo "✅ Git repository initialized with main branch")
+	@echo "🔧 Setting up pre-commit hooks..."
+	@uv run pre-commit install
+	@echo "✅ Installation complete"
+endif
 
 setup-dev: ## Setup development environment
 	@echo "📚 Installing development dependencies..."

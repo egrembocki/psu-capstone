@@ -20,5 +20,6 @@ dependencies:
       - randomname
       - openpyxl
       - mmh3
+      - pre-commit
       
       

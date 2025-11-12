@@ -51,9 +51,8 @@ class ScalarEncoder(BaseEncoder):
                 input_value = max(input_value, self.minimum)
                 input_value = min(input_value, self.maximum)
         else:
-            if self.category:
-                if input_value != float(int(input_value)):
-                    raise ValueError("Input to category encoder must be an unsigned integer!")
+            if self.category and input_value != float(int(input_value)):
+                raise ValueError("Input to category encoder must be an unsigned integer!")
             if not (self.minimum <= input_value <= self.maximum):
                 raise ValueError(
                     f"Input must be within range [{self.minimum}, {self.maximum}]! "
