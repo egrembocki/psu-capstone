@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import time
 import math
+import time
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Set, Union
+from typing import Dict, List, Set, Union
 
 from BaseEncoder import BaseEncoder
-from SDR import SDR
 from ScalarEncoder import ScalarEncoder, ScalarEncoderParameters
-from dataclasses import dataclass, field
+from SDR import SDR
 
 
 @dataclass

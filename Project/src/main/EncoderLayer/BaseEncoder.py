@@ -1,8 +1,9 @@
 """Utilities for defining abstract SDR encoders compatible with pdoc."""
 
 from abc import ABC, abstractmethod
-from SDR import SDR
 from typing import List
+
+from SDR import SDR
 
 
 class BaseEncoder(ABC):

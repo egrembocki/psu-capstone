@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from src.psu_capstone.encoder_layer.date_encoder import DateEncoder, DateEncoderParameters
 from SDR import SDR
 
+from src.psu_capstone.encoder_layer.date_encoder import DateEncoder, DateEncoderParameters
 
 if __name__ == "__main__":
     params = DateEncoderParameters(

@@ -1,12 +1,10 @@
 import math
-import struct
 import random
-
-import mmh3
-
-from BaseEncoder import BaseEncoder
+import struct
 from dataclasses import dataclass
 
+import mmh3
+from BaseEncoder import BaseEncoder
 from SDR import SDR
 
 

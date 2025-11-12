@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Optional
 import numpy as np
 
 
-
 class SparseDistributedRepresentation:
     # they had two types of constructors, one with dimensions and one without
     def __init__(self, dimensions: Optional[List[int]] = None):

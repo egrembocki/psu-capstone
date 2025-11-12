@@ -1,13 +1,14 @@
 """Date-based SDR encoders that decompose calendar features for hierarchical models."""
+import time
 from dataclasses import dataclass, field
+from datetime import datetime, time, timedelta
 from math import ceil
 from time import mktime
 from typing import List
-import ScalarEncoder
-from Project.src.main.EncoderLayer.BaseEncoder import BaseEncoder
-from datetime import datetime, timedelta, time
-import time
 
+import ScalarEncoder
+
+from Project.src.main.EncoderLayer.BaseEncoder import BaseEncoder
 from Project.src.main.EncoderLayer.SDR import SDR
 
 
