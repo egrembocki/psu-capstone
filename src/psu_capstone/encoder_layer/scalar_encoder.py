@@ -1,11 +1,13 @@
 """Scalar Encoder implementation for encoding scalar values into Sparse Distributed Representations (SDRs)."""
 
+import math
+from dataclasses import dataclass
 from typing import List, Union
+
 from typing_extensions import Self
+
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
-from dataclasses import dataclass
-import math
 
 
 @dataclass

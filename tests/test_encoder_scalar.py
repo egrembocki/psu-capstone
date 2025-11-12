@@ -1,8 +1,8 @@
 """Test suite for the SDR Encoder-Scalar."""
 
-import pytest
 import logging as looger
 
+import pytest
 
 from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
@@ -366,7 +366,7 @@ def test_scalar_encoder_serialization():
         print("SERIALIZED:\n", buf)
 
         # Deserialize from JSON string
-        enc = ScalarEncoder(p, [100])  # Temporary instance to load into
+        # enc = ScalarEncoder(p, [100])  # Temporary instance to load into
         # You may need to implement load_json() to load from a JSON string
         # encoder.load_json(buf)
         # encoder = enc

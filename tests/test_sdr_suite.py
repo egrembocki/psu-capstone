@@ -1,6 +1,7 @@
 """Test suite for SDR operations."""
 
 import pytest
+
 from psu_capstone.encoder_layer.sdr import SDR
 
 

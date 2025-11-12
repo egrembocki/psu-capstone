@@ -1,10 +1,11 @@
 """input handler stub - TDD"""
 
-from typing_extensions import Self
-import pandas as pd
-import numpy as np
-from typing import Union
 import logging
+from typing import Union
+
+import numpy as np
+import pandas as pd
+from typing_extensions import Self
 
 
 class InputHandler:

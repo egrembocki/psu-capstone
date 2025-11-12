@@ -1,12 +1,11 @@
 """Base class for all encoder types."""
 
 from abc import ABC, abstractmethod
+from typing import List
 
 from sympy import prod
 from typing_extensions import Self
 
-
-from typing import List
 from psu_capstone.encoder_layer.sdr import SDR
 
 

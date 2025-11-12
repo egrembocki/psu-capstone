@@ -1,23 +1,17 @@
 import math
 import random
-<<<<<<<< HEAD:src/psu_capstone/encoder_layer/rdse.py
-
-import mmh3
-
-from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from dataclasses import dataclass
-from typing import List
-from psu_capstone.encoder_layer.sdr import SDR
-========
 import struct
 from dataclasses import dataclass
 from typing import List
 
 import mmh3
-from SDR import SDR
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 
->>>>>>>> main:src/psu_capstone/sdr_encoder_temp/random_distributed_scalar_encoder.py
+from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+from psu_capstone.encoder_layer.sdr import SDR
+
+# from SDR import SDR
+# from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+
 
 @dataclass
 class RDSEParameters:

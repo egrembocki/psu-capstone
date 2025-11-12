@@ -4,6 +4,7 @@ from pathlib import Path
 
 import gymnasium as gym
 from gymnasium import spaces
+
 from numenta.agent import Environment
 from numenta.utils import get_logger
 

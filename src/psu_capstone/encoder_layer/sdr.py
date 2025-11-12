@@ -9,11 +9,10 @@ in sync with each other.
 from __future__ import annotations
 
 import random
-
 from math import prod
 from typing import Callable, Iterable, List, Optional, Sequence
-from typing_extensions import Self
 
+from typing_extensions import Self
 
 # Type aliases mirroring the C++ implementation
 
