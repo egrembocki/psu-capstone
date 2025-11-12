@@ -1,6 +1,5 @@
 """Scalar Encoder implementation for encoding scalar values into Sparse Distributed Representations (SDRs)."""
 
-
 from typing import List, Union
 from typing_extensions import Self
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
@@ -8,10 +7,11 @@ from psu_capstone.encoder_layer.sdr import SDR
 from dataclasses import dataclass
 import math
 
+
 @dataclass
 class ScalarEncoderParameters:
     """Parameters for the Scalar Encoder."""
-    
+
     minimum: float
     """Minimum value for the input."""
     maximum: float
@@ -33,8 +33,8 @@ class ScalarEncoderParameters:
     resolution: float
     """Resolution of the encoder."""
 
-    #active_bits_or_sparsity: Union[int, float] = 0
-    #member_size_or_radius_or_category_or_resolution: Union[int, float, bool, double] = 0
+    # active_bits_or_sparsity: Union[int, float] = 0
+    # member_size_or_radius_or_category_or_resolution: Union[int, float, bool, double] = 0
 
     """perfect use case for a union : either int or float : active_bits xor sparsity
     perfect use case for a union : int or float or bool or double : member_size xor radius xor category xor resolution"""
@@ -115,56 +115,60 @@ class ScalarEncoder(BaseEncoder):
             sparse.sort()
 
         output.set_sparse(sparse)
-        
+
         self.__sdr = output
 
         return self.__sdr == output
 
-
-
-
-
-
-
-#After encode we may need a check_parameters method since most of the encoders have this
+    # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters) -> ScalarEncoderParameters:
         """Validate and compute derived parameters for the Scalar Encoder. This may change if we can get the Union to work properly."""
         assert parameters.minimum <= parameters.maximum
-        num_active_args = sum([
-            parameters.active_bits > 0,
-            parameters.sparsity > 0.0
-        ])
+        num_active_args = sum([parameters.active_bits > 0, parameters.sparsity > 0.0])
         assert num_active_args != 0, "Missing argument:: need 'activeBits' or 'sparsity'."
         assert num_active_args == 1, (
-            "Specified both:: 'activeBits' and 'sparsity'. "
-            "Specify only one of them."
+            "Specified both:: 'activeBits' and 'sparsity'. " "Specify only one of them."
         )
-        num_size_args = sum([
-            parameters.member_size > 0,
-            parameters.radius > 0.0,
-            bool(parameters.category),
-            parameters.resolution > 0.0
-        ])
-        assert num_size_args != 0, (
-            "Missing argument, need one of: 'size', 'radius', 'resolution', 'category'."
+        num_size_args = sum(
+            [
+                parameters.member_size > 0,
+                parameters.radius > 0.0,
+                bool(parameters.category),
+                parameters.resolution > 0.0,
+            ]
         )
-        assert num_size_args == 1, "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them."
+        assert (
+            num_size_args != 0
+        ), "Missing argument, need one of: 'size', 'radius', 'resolution', 'category'."
+        assert (
+            num_size_args == 1
+        ), "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them."
         if parameters.periodic:
-            assert not parameters.clip_input, "Will not clip periodic inputs.  Caller must apply modulus."
+            assert (
+                not parameters.clip_input
+            ), "Will not clip periodic inputs.  Caller must apply modulus."
         if parameters.category:
             assert not parameters.clip_input, "Incompatible arguments: category & clipInput."
             assert not parameters.periodic, "Incompatible arguments: category & periodic."
-            assert parameters.minimum == float(int(parameters.minimum)), "Minimum input value of category encoder must be an unsigned integer!"
-            assert parameters.maximum == float(int(parameters.maximum)), "Maximum input value of category encoder must be an unsigned integer!"
+            assert parameters.minimum == float(
+                int(parameters.minimum)
+            ), "Minimum input value of category encoder must be an unsigned integer!"
+            assert parameters.maximum == float(
+                int(parameters.maximum)
+            ), "Maximum input value of category encoder must be an unsigned integer!"
 
         args = parameters
         if args.category:
             args.radius = 1.0
         if args.sparsity:
             assert 0.0 <= args.sparsity <= 1.0
-            assert args.member_size > 0, "Argument 'sparsity' requires that the 'size' also be given."
+            assert (
+                args.member_size > 0
+            ), "Argument 'sparsity' requires that the 'size' also be given."
             args.active_bits = round(args.member_size * args.sparsity)
-            assert args.active_bits > 0, "sparsity and size must be given so that sparsity * size > 0!"
+            assert (
+                args.active_bits > 0
+            ), "sparsity and size must be given so that sparsity * size > 0!"
         if args.periodic:
             extent_width = args.maximum - args.minimum
         else:
@@ -172,13 +176,13 @@ class ScalarEncoder(BaseEncoder):
             extent_width = max_inclusive - args.minimum
         if args.member_size > 0:
             if args.periodic:
-                args.resolution = (extent_width / args.member_size)
+                args.resolution = extent_width / args.member_size
             else:
-                n_buckets = args.member_size - (args.active_bits -1)
-                args.resolution = (extent_width / (n_buckets-1))
+                n_buckets = args.member_size - (args.active_bits - 1)
+                args.resolution = extent_width / (n_buckets - 1)
         else:
             if args.radius > 0.0:
-                args.resolution = (args.radius / args.active_bits)
+                args.resolution = args.radius / args.active_bits
 
             needed_bands = math.ceil(extent_width / args.resolution)
             if args.periodic:
@@ -196,5 +200,5 @@ class ScalarEncoder(BaseEncoder):
 
         args.sparsity = args.active_bits / float(args.member_size)
         assert args.sparsity > 0
-        
+
         return args

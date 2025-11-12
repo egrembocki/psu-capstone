@@ -32,7 +32,7 @@ class InputHandler:
         self._data = pd.DataFrame()
         self._raw_data = ""
         logging.info("InputHandler initialized.")
-    
+
     def load_data(self, filepath: str):
         """Load data from a file into a DataFrame based on file extension."""
         assert isinstance(filepath, str), "File path must be a string"
@@ -52,4 +52,3 @@ class InputHandler:
     def get_data(self) -> pd.DataFrame:
         """Getter for the data attribute"""
         return self._data
-     

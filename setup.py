@@ -1,6 +1,5 @@
 """Setup script for psu_capstone package."""
 
-
 from setuptools import setup, find_packages
 
 setup(
