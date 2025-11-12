@@ -46,9 +46,5 @@ class SDR:
     def do_callbacks(self):
         pass
 
-<<<<<<<< HEAD:Project/src/main/EncoderLayer/SDR.py
-    def getDense(self):
-========
     def get_dense(self):
->>>>>>>> origin/main:src/psu_capstone/sdr_encoder_temp/sdr.py
         return self.dense
