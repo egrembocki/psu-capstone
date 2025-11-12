@@ -99,9 +99,7 @@ class InputHandler:
 
         # Placeholder implementation; actual validation logic will depend on data type and requirements
 
-        is_valid = isinstance(
-            self._data, (pd.DataFrame, list, np.ndarray, pd.Series, dict, str)
-        )
+        is_valid = isinstance(self._data, (pd.DataFrame, list, np.ndarray, pd.Series, dict, str))
 
         return is_valid
 

@@ -5,6 +5,7 @@ import pathlib as path
 
 from InputLayer.InputHandler import InputHandler
 
+
 def plot_sdrs(*named_sdrs: Tuple[str, SDR]) -> None:
     """Visualise SDRs as heatmaps where active bits are highlighted."""
 
@@ -52,7 +53,6 @@ def main():
         ("Union", sdr_cat),
         ("Sparse", sdr_sparse),
     )
-
 
 
 if __name__ == "__main__":
