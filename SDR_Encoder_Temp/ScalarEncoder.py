@@ -53,9 +53,7 @@ class ScalarEncoder(BaseEncoder):
         else:
             if self.category:
                 if input_value != float(int(input_value)):
-                    raise ValueError(
-                        "Input to category encoder must be an unsigned integer!"
-                    )
+                    raise ValueError("Input to category encoder must be an unsigned integer!")
             if not (self.minimum <= input_value <= self.maximum):
                 raise ValueError(
                     f"Input must be within range [{self.minimum}, {self.maximum}]! "
@@ -79,9 +77,7 @@ class ScalarEncoder(BaseEncoder):
     def check_parameters(self, parameters: ScalarEncoderParameters):
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([parameters.activeBits > 0, parameters.sparsity > 0.0])
-        assert (
-            num_active_args != 0
-        ), "Missing argument, need one of: 'activeBits', 'sparsity'."
+        assert num_active_args != 0, "Missing argument, need one of: 'activeBits', 'sparsity'."
         assert (
             num_active_args == 1
         ), "Specified both: 'activeBits', 'sparsity'. Specify only one of them."
@@ -104,12 +100,8 @@ class ScalarEncoder(BaseEncoder):
                 not parameters.clipInput
             ), "Will not clip periodic inputs.  Caller must apply modulus."
         if parameters.category:
-            assert (
-                not parameters.clipInput
-            ), "Incompatible arguments: category & clipInput."
-            assert (
-                not parameters.periodic
-            ), "Incompatible arguments: category & periodic."
+            assert not parameters.clipInput, "Incompatible arguments: category & clipInput."
+            assert not parameters.periodic, "Incompatible arguments: category & periodic."
             assert parameters.minimum == float(
                 int(parameters.minimum)
             ), "Minimum input value of category encoder must be an unsigned integer!"

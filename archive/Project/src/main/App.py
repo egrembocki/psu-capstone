@@ -32,6 +32,5 @@ def main() -> None:
     print("SP + TM demo completed.")
 
 
-
 if __name__ == "__main__":
     main()

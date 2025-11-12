@@ -25,9 +25,7 @@ class GymAdapter(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        obs, reward, done, truncated, info, surrounding_tiles = self.core.reset(
-            seed=seed
-        )
+        obs, reward, done, truncated, info, surrounding_tiles = self.core.reset(seed=seed)
         return obs, info
 
     def step(self, action):
@@ -62,9 +60,7 @@ class FrozenLakeEnvironment(Environment):
         )
 
         self.action_space = self.env.action_space  # action_space attribute
-        self.observation_space = (
-            self.env.observation_space
-        )  # observation_space attribute
+        self.observation_space = self.env.observation_space  # observation_space attribute
         self._step_out = None
         self.reset()
         # self.col = 0 #Agents column position
@@ -139,7 +135,5 @@ class FrozenLakeEnvironment(Environment):
             "current": (row, col),
         }
         for direction, (r, c) in directions.items():
-            surrounding_tiles[direction] = desc[r, c].decode(
-                "utf-8"
-            )  # Decode byte to string
+            surrounding_tiles[direction] = desc[r, c].decode("utf-8")  # Decode byte to string
         return surrounding_tiles

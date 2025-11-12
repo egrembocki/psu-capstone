@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Optional
 import numpy as np
 
 
-
 class SparseDistributedRepresentation:
     # they had two types of constructors, one with dimensions and one without
     def __init__(self, dimensions: Optional[List[int]] = None):
@@ -347,9 +346,6 @@ class SparseDistributedRepresentation:
         return len(self.destroy_callbacks) - 1
 
     def removeDestroyCallback(self, index: int):
-        if (
-            index >= len(self.destroy_callbacks)
-            or self.destroy_callbacks[index] is None
-        ):
+        if index >= len(self.destroy_callbacks) or self.destroy_callbacks[index] is None:
             raise Exception("Invalid destroy callback.")
         self.destroy_callbacks[index] = None

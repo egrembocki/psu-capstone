@@ -14,16 +14,16 @@ from typing import (
 import numpy as np
 
 # Constants (Spatial Pooler)
-CONNECTED_PERM = (
-    0.5  # Permanence threshold for an input synapse to be considered connected
-)
+CONNECTED_PERM = 0.5  # Permanence threshold for an input synapse to be considered connected
 MIN_OVERLAP = 3  # Minimum overlap to be considered during inhibition
 PERMANENCE_INC = 0.01
 PERMANENCE_DEC = 0.01
 DESIRED_LOCAL_ACTIVITY = 10
 
 # Constants (Temporal Memory)
-SEGMENT_ACTIVATION_THRESHOLD = 3  # Active connected distal synapses required for a segment to be active (prediction)
+SEGMENT_ACTIVATION_THRESHOLD = (
+    3  # Active connected distal synapses required for a segment to be active (prediction)
+)
 SEGMENT_LEARNING_THRESHOLD = 3  # Subset used to select best matching segment
 INITIAL_DISTAL_PERM = 0.21  # Initial permanence for new distal synapses
 NEW_SYNAPSE_MAX = 6  # New synapses to add when reinforcing a learning segment
@@ -112,16 +112,12 @@ class Column:
         self.active_duty_cycle = 0.0
         self.overlap_duty_cycle = 0.0
         self.min_duty_cycle = 0.01
-        self.connected_synapses = [
-            s for s in potential_synapses if s.permanence > CONNECTED_PERM
-        ]
+        self.connected_synapses = [s for s in potential_synapses if s.permanence > CONNECTED_PERM]
         self.overlap = 0.0
 
     def compute_overlap(self, input_vector: np.ndarray) -> None:
         """Compute overlap with current binary input vector and apply boost."""
-        overlap = sum(
-            1 for s in self.connected_synapses if input_vector[s.source_input]
-        )
+        overlap = sum(1 for s in self.connected_synapses if input_vector[s.source_input])
         self.overlap = float(overlap * self.boost) if overlap >= MIN_OVERLAP else 0.0
         print(f"Column at position {self.position} has overlap: {self.overlap}")
 
@@ -207,9 +203,7 @@ class TemporalPooler:
                 for _ in range(initial_synapses_per_column)
             ]
             columns.append(Column(potential_synapses, position))
-        print(
-            f"Initialized {len(columns)} columns with positions and potential synapses."
-        )
+        print(f"Initialized {len(columns)} columns with positions and potential synapses.")
         return columns
 
     # Computes the active columns after applying inhibition
@@ -324,9 +318,7 @@ class TemporalPooler:
                         break
             if counts:
                 # select max count, break ties by field order
-                best = sorted(
-                    counts.items(), key=lambda kv: (-kv[1], inv_order[kv[0]])
-                )[0][0]
+                best = sorted(counts.items(), key=lambda kv: (-kv[1], inv_order[kv[0]]))[0][0]
                 self.column_field_map[col] = best
             else:
                 self.column_field_map[col] = None
@@ -371,9 +363,7 @@ class TemporalPooler:
 
         for column in active_columns:
             # Predictive cells from previous time in this column
-            predictive_cells_prev = [
-                cell for cell in column.cells if cell in prev_predictive
-            ]
+            predictive_cells_prev = [cell for cell in column.cells if cell in prev_predictive]
             if predictive_cells_prev:
                 # Column correctly predicted
                 for cell in predictive_cells_prev:
@@ -401,9 +391,7 @@ class TemporalPooler:
         self.active_cells[t] = active_cells_t
         self.winner_cells[t] = winner_cells_t
         self.learning_segments[t] = learning_segments_t
-        print(
-            f"Active state computed for time step {t}: {len(active_cells_t)} cells active."
-        )
+        print(f"Active state computed for time step {t}: {len(active_cells_t)} cells active.")
 
     def compute_predictive_state(self) -> None:
         """Compute predictive cells for next time based on segments active at time t.
@@ -415,10 +403,7 @@ class TemporalPooler:
         for column in self.columns:
             for cell in column.cells:
                 for seg in cell.segments:
-                    if (
-                        len(seg.active_synapses(active_cells_t))
-                        >= SEGMENT_ACTIVATION_THRESHOLD
-                    ):
+                    if len(seg.active_synapses(active_cells_t)) >= SEGMENT_ACTIVATION_THRESHOLD:
                         predictive_cells_t.add(cell)
                         break
         self.predictive_cells[t] = predictive_cells_t
@@ -449,9 +434,7 @@ class TemporalPooler:
         if query_t < 0:
             return np.zeros(len(self.columns), dtype=int)
         pred_cells = self.predictive_cells.get(query_t, set())
-        cols = {
-            col for col in self.columns if any(cell in pred_cells for cell in col.cells)
-        }
+        cols = {col for col in self.columns if any(cell in pred_cells for cell in col.cells)}
         if field_name is not None:
             # Allow either classic field_ranges-based metadata OR explicit column_field_map assignment
             if not (self.field_ranges or self.column_field_map):
@@ -476,10 +459,7 @@ class TemporalPooler:
     def run(
         self,
         input_data: (
-            InputComposite
-            | Sequence[Column]
-            | Column
-            | Dict[str, Union[Column, Sequence[Column]]]
+            InputComposite | Sequence[Column] | Column | Dict[str, Union[Column, Sequence[Column]]]
         ),
         mode: str = "direct",
         inhibition_radius: Optional[float] = None,
@@ -525,10 +505,7 @@ class TemporalPooler:
     def _direct_mode_active_columns(
         self,
         input_data: (
-            InputComposite
-            | Sequence[Column]
-            | Column
-            | Dict[str, Union[Column, Sequence[Column]]]
+            InputComposite | Sequence[Column] | Column | Dict[str, Union[Column, Sequence[Column]]]
         ),
     ) -> List[Column]:
         """Resolve active columns for 'direct' mode without spatial competition (duplicate of htm.py)."""
@@ -536,9 +513,7 @@ class TemporalPooler:
             return [input_data]
         if isinstance(input_data, dict):
             values = list(input_data.values())
-            is_grouping = bool(values) and all(
-                isinstance(v, (Column, list, tuple)) for v in values
-            )
+            is_grouping = bool(values) and all(isinstance(v, (Column, list, tuple)) for v in values)
             if is_grouping:
                 active: List[Column] = []
                 self.field_order = list(input_data.keys())
@@ -576,11 +551,7 @@ class TemporalPooler:
             if isinstance(first, Column):
                 return seq  # type: ignore[return-value]
             if isinstance(first, (int, np.integer)):
-                return [
-                    self.columns[int(i)]
-                    for i in seq
-                    if isinstance(i, (int, np.integer))
-                ]
+                return [self.columns[int(i)] for i in seq if isinstance(i, (int, np.integer))]
             combined = self.combine_input_fields(seq)  # type: ignore[arg-type]
             return self._columns_from_raw_input(combined)
         combined = self.combine_input_fields(input_data)  # type: ignore[arg-type]
@@ -646,10 +617,7 @@ class TemporalPooler:
         prev_active_cells = self.active_cells.get(t, set())
         active_list = []
         for seg in cell.segments:
-            if (
-                len(seg.active_synapses(prev_active_cells))
-                >= SEGMENT_ACTIVATION_THRESHOLD
-            ):
+            if len(seg.active_synapses(prev_active_cells)) >= SEGMENT_ACTIVATION_THRESHOLD:
                 active_list.append(seg)
         return active_list
 
@@ -679,25 +647,19 @@ class TemporalPooler:
             syn.permanence = max(0.0, syn.permanence - PERMANENCE_DEC)
 
     # Applies inhibition to determine which columns will become active
-    def inhibition(
-        self, columns: Sequence[Column], inhibition_radius: float
-    ) -> List[Column]:
+    def inhibition(self, columns: Sequence[Column], inhibition_radius: float) -> List[Column]:
         active_columns: List[Column] = []
         for c in columns:
             # Find neighbors of column c
             neighbors = [
                 c2
                 for c2 in columns
-                if c != c2
-                and self.euclidean_distance(c.position, c2.position)
-                <= inhibition_radius
+                if c != c2 and self.euclidean_distance(c.position, c2.position) <= inhibition_radius
             ]
             min_local_activity = self.kth_score(neighbors, DESIRED_LOCAL_ACTIVITY)
             if c.overlap > 0 and c.overlap >= min_local_activity:
                 active_columns.append(c)
-        print(
-            f"After inhibition, active columns: {[c.position for c in active_columns]}"
-        )
+        print(f"After inhibition, active columns: {[c.position for c in active_columns]}")
         return active_columns
 
     def euclidean_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
@@ -718,9 +680,7 @@ class TemporalPooler:
 
     # Removed legacy helper methods tied to old temporal representation.
 
-    def learning_phase(
-        self, active_columns: Sequence[Column], input_vector: np.ndarray
-    ) -> None:
+    def learning_phase(self, active_columns: Sequence[Column], input_vector: np.ndarray) -> None:
         """Spatial Pooler permanence adaptation for currently active columns."""
         for c in active_columns:
             for s in c.potential_synapses:
@@ -731,9 +691,7 @@ class TemporalPooler:
             c.connected_synapses = [
                 s for s in c.potential_synapses if s.permanence > CONNECTED_PERM
             ]
-        print(
-            f"Learning phase updated the synapses for {len(active_columns)} active columns."
-        )
+        print(f"Learning phase updated the synapses for {len(active_columns)} active columns.")
 
         # Could update inhibition radius if implementing adaptive inhibition.
         _ = self.average_receptive_field_size(self.columns)
@@ -744,9 +702,7 @@ class TemporalPooler:
         for c in columns:
             connected_positions = [s.source_input for s in c.connected_synapses]
             if connected_positions:
-                receptive_field_size = max(connected_positions) - min(
-                    connected_positions
-                )
+                receptive_field_size = max(connected_positions) - min(connected_positions)
                 total_receptive_field_size += receptive_field_size
                 count += 1
         return total_receptive_field_size / count if count > 0 else 0.0
