@@ -1,4 +1,4 @@
-"""Date encodeer 2.0 for HTM, ported to Python from the C++ implementation."""
+"""Date encoder 2.0 for HTM, ported to Python from the C++ implementation."""
 
 from __future__ import annotations
 
