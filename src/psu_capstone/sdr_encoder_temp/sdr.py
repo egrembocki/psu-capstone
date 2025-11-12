@@ -10,11 +10,9 @@ class SDR:
     elem_sparse = int  #: Sparse index type mirroring the C++ implementation.
     sdr_dense_t = List[elem_dense]  #: Alias for the dense SDR container type.
     sdr_sparse_t = List[elem_sparse]  #: Alias for the sparse SDR container type.
-    sdr_coordinate_t = List[
-        List[int]
-    ]  #: Alias representing coordinates grouped per dimension.
+    sdr_coordinate_t = List[List[int]]  #: Alias representing coordinates grouped per dimension.
     sdr_callback_t = Callable[[], None]  #: Callback signature invoked on SDR state changes.
-    
+
     def __init__(self, dimensions: list[int]):
         self.size = 1
         self.dimensions_ = dimensions
