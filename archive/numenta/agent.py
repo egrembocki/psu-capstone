@@ -2,12 +2,12 @@ import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict
+
 import numpy as np
 from gymnasium import spaces
 from htm import TemporalPooler
 from numenta.frozen_lake import FrozenLakeEnvironment, GymAdapter
 from numenta.utils import get_logger
-
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 

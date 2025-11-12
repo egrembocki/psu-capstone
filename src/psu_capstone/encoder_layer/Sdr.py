@@ -75,7 +75,7 @@ class SDR:
     def size(self) -> int:
         """Return the total number of bits in the SDR."""
         return self.__size
-    
+
     @property
     def dimensions(self) -> List[int]:
         """Return the dimensions of the SDR."""

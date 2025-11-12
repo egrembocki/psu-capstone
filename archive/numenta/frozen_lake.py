@@ -4,15 +4,11 @@ from pathlib import Path
 
 import gymnasium as gym
 from gymnasium import spaces
-
 from numenta.agent import Environment
 
-<<<<<<<< HEAD:numenta/frozen_lake.py
-========
 from numenta.utils import get_logger
 
 sys.path.append(str(Path(__file__).parents[1]))
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
 
 
 class GymAdapter(gym.Env):
@@ -61,17 +57,13 @@ class FrozenLakeEnvironment(Environment):
         super(FrozenLakeEnvironment, self).__init__()
         # def __init__(self):
         # generating the frozen lake environment
-        self.env = gym.make(
-<<<<<<<< HEAD:numenta/frozen_lake.py
-            "FrozenLake-v1",
-            desc=None,
-            map_name="4x4",
-            is_slippery=False,
-            render_mode=render_mode,
-========
-            "FrozenLake-v1", desc=None, map_name="4x4", is_slippery=False, render_mode=render_mode
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
-        )
+self.env = gym.make(
+    "FrozenLake-v1",
+    desc=None,
+    map_name="4x4",
+    is_slippery=False,
+    render_mode=render_mode,
+)
 
         self.action_space = self.env.action_space  # action_space attribute
         self.observation_space = (
@@ -103,19 +95,15 @@ class FrozenLakeEnvironment(Environment):
 <<<<<<<< HEAD:numenta/frozen_lake.py
         return (
             state,
-            reward,
-            done,
-            truncated,
-            info,
-            surrounding_tiles,
-        )  # action chosen by the agent
-========
-        return state, reward, done, truncated, info, surrounding_tiles  # action chosen by the agent
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
-
-    def run_commands(self, motor_commands):
-        action = motor_commands["move"]
-        self._step_out = self.step(action)
+surrounding_tiles = self.get_surrounding_tiles(self.row, self.col)
+return (
+    state,
+    reward,
+    done,
+    truncated,
+    info,
+    surrounding_tiles,
+)  # action chosen by the agent
 
     def receive_sensory_stimuli(self):
         if self._step_out is None:
@@ -162,4 +150,8 @@ class FrozenLakeEnvironment(Environment):
 ========
             surrounding_tiles[direction] = desc[r, c].decode("utf-8")  # Decode byte to string
 >>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
-        return surrounding_tiles
+for direction, (r, c) in directions.items():
+    surrounding_tiles[direction] = desc[r, c].decode(
+        "utf-8"
+    )  # Decode byte to string
+return surrounding_tiles
