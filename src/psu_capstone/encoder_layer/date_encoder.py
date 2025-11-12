@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 @dataclass
 class DateEncoderParameters:
     """Parameters for DateEncoder."""
+
     # Season: day of year (0..366), default radius 91.5 days (~4 seasons)
     season_width: int = 0
     season_radius: float = 91.5
@@ -65,7 +66,7 @@ class DateEncoder(BaseEncoder):
 
     def __init__(self, parameters: DateEncoderParameters) -> None:
         """Initialise all scalar sub-encoders and supporting metadata."""
-        super().__init__()   # matches how ScalarEncoder calls BaseEncoder
+        super().__init__()  # matches how ScalarEncoder calls BaseEncoder
         self.args = parameters
         # For API parity with C++ header
         self.parameters = self.args
@@ -170,7 +171,7 @@ class DateEncoder(BaseEncoder):
                 maximum=1.0,
                 clip_input=False,
                 periodic=False,
-                category=True,      # binary category 0/1
+                category=True,  # binary category 0/1
                 active_bits=args.weekend_width,
                 sparsity=0.0,
                 member_size=0,
@@ -219,7 +220,7 @@ class DateEncoder(BaseEncoder):
                 maximum=1.0,
                 clip_input=False,
                 periodic=False,
-                category=True,      # boolean category
+                category=True,  # boolean category
                 active_bits=args.custom_width,
                 sparsity=0.0,
                 member_size=0,
@@ -296,7 +297,9 @@ class DateEncoder(BaseEncoder):
     # Public encode API (similar to C++ overloads)
     # ------------------------------------------------------------------ #
 
-    def encode(self, input_value: Union[int, float, datetime, time.struct_time, None], output: SDR) -> None:
+    def encode(
+        self, input_value: Union[int, float, datetime, time.struct_time, None], output: SDR
+    ) -> None:
         """
         Encode a timestamp-like value into `output` SDR.
 
@@ -325,10 +328,7 @@ class DateEncoder(BaseEncoder):
         sdrs: List[SDR] = []
 
         # verbose
-        self._log(
-            f"Encoding {time.asctime(t)} "
-            f"{'(dst)' if t.tm_isdst > 0 else ''}"
-        )
+        self._log(f"Encoding {time.asctime(t)} " f"{'(dst)' if t.tm_isdst > 0 else ''}")
 
         # --- Season: day of year (0-based) ---
         if self.seasonEncoder is not None:

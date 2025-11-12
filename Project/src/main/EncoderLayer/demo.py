@@ -1,5 +1,5 @@
-#C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
-#C:\Users\chris\repos\psu-capstone\SDR_Encoder_Temp
+# C:\Users\chris\repos\psu-capstone\Project\src\main\App.py
+# C:\Users\chris\repos\psu-capstone\SDR_Encoder_Temp
 
 from __future__ import annotations
 

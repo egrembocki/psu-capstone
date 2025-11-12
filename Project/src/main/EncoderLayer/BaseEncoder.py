@@ -35,7 +35,7 @@ class BaseEncoder(ABC):
 
         #    if dimensions is not None:
         #    self.initialize(dimensions)
- 
+
     @property
     def dimensions(self) -> List[int]:
         """
@@ -94,8 +94,8 @@ class BaseEncoder(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-# Example usage:
-# encoder = SomeConcreteEncoder(params)
-# output_sdr = SDR(dimensions=encoder.dimensions)
-# encoder.encode(input_value, output_sdr)
+    # Example usage:
+    # encoder = SomeConcreteEncoder(params)
+    # output_sdr = SDR(dimensions=encoder.dimensions)
+    # encoder.encode(input_value, output_sdr)
     print("GOOD")

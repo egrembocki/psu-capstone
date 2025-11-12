@@ -129,9 +129,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
             output.zero()
             return
         if self.category and (input_value != int(input_value) or input_value < 0):
-            raise ValueError(
-                "Input to category encoder must be an unsigned integer"
-            )
+            raise ValueError("Input to category encoder must be an unsigned integer")
 
         data = [0] * self.size
 
@@ -162,9 +160,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         if parameters.sparsity > 0:
             num_active_args += 1
 
-        assert (
-            num_active_args != 0
-        ), "Missing argument, need one of: 'activeBits' or 'sparsity'."
+        assert num_active_args != 0, "Missing argument, need one of: 'activeBits' or 'sparsity'."
         assert (
             num_active_args == 1
         ), "Too many arguments, choose only one of: 'activeBits' or 'sparsity'."
