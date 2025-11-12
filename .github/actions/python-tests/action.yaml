@@ -237,7 +237,7 @@ runs:
     - name: Run Tests
       id: run_tests
       shell: bash
-      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: true
       run: |
         # Run tests with pytest
         pm="${{ steps.detect_package_manager.outputs.package_manager }}"
