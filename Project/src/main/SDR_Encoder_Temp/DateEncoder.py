@@ -3,7 +3,6 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 from math import ceil
-from time import mktime
 from typing import List
 
 import ScalarEncoder
