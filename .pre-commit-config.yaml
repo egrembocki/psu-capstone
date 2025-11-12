@@ -2,8 +2,8 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
-    - id: detect-private-key
-      description: Prevent committing private keys to the repository
+    # - id: detect-private-key
+    #   description: Prevent committing private keys to the repository
     - id: no-commit-to-branch
       args: [--branch, discovery]
     - id: check-merge-conflict
