@@ -1,6 +1,7 @@
 """Test suite for SDR operations."""
 
 import pytest
+
 from psu_capstone.encoder_layer.sdr import SDR
 
 
@@ -12,7 +13,7 @@ def sdr_fixture():
 
 def test_sdr_creation():
     """Test SDR creation and basic properties."""
-   
+
     # Arrange
     dimensions = [10]
 
@@ -24,7 +25,7 @@ def test_sdr_creation():
     assert sdr.size == 10
     assert sdr.get_sparse() == []
 
-    
+
 def test_sdr_initialization_and_properties(sdr_fixture):
     # Arrange
     sdr = sdr_fixture
@@ -107,7 +108,7 @@ def test_sdr_metrics(sdr_fixture):
     sparsity = sdr.get_sparsity()
     # Assert
     assert s == 3
-    assert sparsity == 3/5
+    assert sparsity == 3 / 5
 
 
 def test_sdr_get_overlap(sdr_fixture):
@@ -206,18 +207,16 @@ def test_sdr_eq_repr(sdr_fixture):
     sdr1.set_dense([1, 0, 1])
     sdr2.set_dense([1, 0, 1])
     # Act
-    eq_result = (sdr1 == sdr2)
+    eq_result = sdr1 == sdr2
     repr_result = repr(sdr1)
     # Assert
     assert eq_result
     assert "SDR(dimensions=[3], size=3, active=2)" in repr_result
-  
-
 
 
 def test_sdr_set_and_get_sparse():
     """Test setting and getting sparse representation."""
-  
+
     # Arrange
     dimensions = [10]
     sdr = SDR(dimensions)
@@ -231,7 +230,7 @@ def test_sdr_set_and_get_sparse():
 
 def test_sdr_zero():
     """Test zeroing the SDR."""
-   
+
     # Arrange
     dimensions = [10]
     sdr = SDR(dimensions)
@@ -246,7 +245,7 @@ def test_sdr_zero():
 
 def test_sdr_set_dense():
     """Test setting dense representation and converting to sparse."""
-   
+
     # Arrange
     dimensions = [5]
     sdr = SDR(dimensions)
@@ -261,7 +260,7 @@ def test_sdr_set_dense():
 
 def test_sdr_64_32_init():
     """Test SDR creation with dimensions [64, 32]."""
-   
+
     # Arrange
     dimensions = [64, 32]
 
@@ -269,7 +268,7 @@ def test_sdr_64_32_init():
     sdr = SDR(dimensions)
     sdr.randomize(0.02)
     test_bits = sdr.get_sparse()
-    
+
     # Assert
     assert sdr.dimensions == [64, 32]
     assert sdr.size == 2048
@@ -278,7 +277,7 @@ def test_sdr_64_32_init():
 
 def test_sdr_destroy():
     """Test SDR destruction."""
-   
+
     # Arrange
     dimensions = [10]
     sdr = SDR(dimensions)
@@ -290,4 +289,3 @@ def test_sdr_destroy():
     # Assert
     assert sdr.dimensions == []
     assert sdr.size == 0
-

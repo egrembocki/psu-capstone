@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 import pandas as pd
@@ -85,7 +84,9 @@ def test_load_data_txt_returns_dataframe_of_lines(tmp_path: Path, handler: Input
     assert df.iloc[-1, 0] == "third line\n"
 
 
-def test_load_data_unsupported_extension_raises_value_error(tmp_path: Path, handler: InputHandler) -> None:
+def test_load_data_unsupported_extension_raises_value_error(
+    tmp_path: Path, handler: InputHandler
+) -> None:
     bad_path = tmp_path / "sample.xml"
     bad_path.write_text("<root><a>1</a></root>")
 
@@ -109,7 +110,7 @@ def test_load_data_missing_file_raises(tmp_path: Path, handler: InputHandler) ->
 
 def test_load_data_requires_string_path(tmp_path: Path, handler: InputHandler) -> None:
     """Test that load_data raises an error when given a non-string path."""
-    
+
     # Arrange
     csv_path = tmp_path / "sample.csv"
     csv_path.write_text("a,b\n1,2\n")

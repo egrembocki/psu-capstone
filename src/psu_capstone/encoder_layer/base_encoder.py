@@ -1,12 +1,11 @@
 """Base class for all encoder types."""
 
 from abc import ABC, abstractmethod
+from typing import List
 
 from sympy import prod
 from typing_extensions import Self
 
-
-from typing import List
 from psu_capstone.encoder_layer.sdr import SDR
 
 
@@ -19,7 +18,7 @@ class BaseEncoder(ABC):
     __dimensions: List[int]
     """Input space of the encoder."""
 
-    __sdr : SDR
+    __sdr: SDR
     """Internal SDR representation."""
 
     def __new__(cls) -> Self:
@@ -32,8 +31,10 @@ class BaseEncoder(ABC):
         self.__dimensions = dimensions
         self.__size = prod(int(dim) for dim in self.__dimensions)
 
-        print(f"Initialized BaseEncoder with dimensions: {self.__dimensions}"
-              f" and size: {self.__size}")
+        print(
+            f"Initialized BaseEncoder with dimensions: {self.__dimensions}"
+            f" and size: {self.__size}"
+        )
 
     @property
     def dimensions(self) -> List[int]:

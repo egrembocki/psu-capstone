@@ -1,8 +1,8 @@
 """Test suite for the SDR Encoder-Scalar."""
 
-import pytest
 import logging as looger
 
+import pytest
 
 from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
@@ -21,14 +21,18 @@ def do_scalar_value_cases(encoder, cases):
         # case: (input_value, expected_output_indices)
         input_value, expected_output = case
         expected_output_sorted = sorted(expected_output)
-        
+
         # This may not work
-        expected_sdr = SDR(encoder.parameters.size if hasattr(encoder, 'parameters') else encoder.dimensions)
-        
+        expected_sdr = SDR(
+            encoder.parameters.size if hasattr(encoder, "parameters") else encoder.dimensions
+        )
+
         expected_sdr.set_sparse(expected_output_sorted)
-        
+
         # This may not work
-        actual_sdr = SDR(encoder.parameters.size if hasattr(encoder, 'parameters') else encoder.dimensions)
+        actual_sdr = SDR(
+            encoder.parameters.size if hasattr(encoder, "parameters") else encoder.dimensions
+        )
 
         encoder.encode(input_value, actual_sdr)
 
@@ -52,14 +56,14 @@ def test_scalar_encoder_initialization():
         member_size=50,
         radius=0.0,
         category=False,
-        resolution=0.0    
+        resolution=0.0,
     )
-   
+
     dimensions = [2, 5]
-  
+
     # Act
     encoder = ScalarEncoder(parameters, dimensions)
-   
+
     # Assert
     assert isinstance(encoder, ScalarEncoder)
     assert encoder.size == 10
@@ -68,7 +72,7 @@ def test_scalar_encoder_initialization():
 
 def test_clipping_inputs():
     """Test that inputs are correctly clipped to the specified min/max range."""
- 
+
     # Arrange
     parameters = ScalarEncoderParameters(
         member_size=10,
@@ -76,7 +80,6 @@ def test_clipping_inputs():
         minimum=10.0,
         maximum=20.0,
         clip_input=False,
-
         # Other parameters can be default or arbitrary
         periodic=False,
         # Unions pending
@@ -84,7 +87,7 @@ def test_clipping_inputs():
         # Unions pending
         radius=0.0,
         category=False,
-        resolution=0.0
+        resolution=0.0,
     )
     dimensions = [2, 5]
 
@@ -92,16 +95,16 @@ def test_clipping_inputs():
     encoder = ScalarEncoder(parameters, dimensions)
     test_sdr = SDR([2, 5])
     test_sdr.zero()
-        
+
     assert encoder.size == 10
     assert encoder.dimensions == [2, 5]
     assert test_sdr._size == 10
 
     # Act and Asset - Test input clipping
     # These should pass without exceptions
-    assert encoder.encode(10.0, test_sdr)   # At minimum edge case
-    assert encoder.encode(20.0, test_sdr)   # At maximum edge case
-      
+    assert encoder.encode(10.0, test_sdr)  # At minimum edge case
+    assert encoder.encode(20.0, test_sdr)  # At maximum edge case
+
     assert encoder.__sdr == test_sdr
 
     with pytest.raises(ValueError):
@@ -111,7 +114,7 @@ def test_clipping_inputs():
 
 def test_valid_scalar_inputs():
     """Test that valid scalar inputs are encoded correctly."""
-    
+
     # Arrange
     params = ScalarEncoderParameters(
         member_size=10,
@@ -124,9 +127,9 @@ def test_valid_scalar_inputs():
         category=False,
         resolution=0.0,
         clip_input=False,
-        periodic=False
+        periodic=False,
     )
-    
+
     # Act and Assert - baseline
     encoder = ScalarEncoder(params, [10])
     test_sdr = SDR([10])
@@ -138,7 +141,7 @@ def test_valid_scalar_inputs():
     with pytest.raises(Exception):
         encoder.encode(9.999, test_sdr)  # Below minimum edge case
         encoder.encode(20.0001, test_sdr)  # Above maximum edge case
-    
+
     assert encoder.encode(10.0, test_sdr)  # At minimum edge case
     assert encoder.encode(19.9, test_sdr)  # Just below maximum edge case
 
@@ -157,7 +160,7 @@ def test_scalar_encoder_category_encode():
         category=False,
         resolution=0.0,
         clip_input=False,
-        periodic=False
+        periodic=False,
     )
 
     # Act and Assert - baseline
@@ -174,14 +177,14 @@ def test_scalar_encoder_category_encode():
     # Act and Assert - Value greater than maximum should raise
     with pytest.raises(Exception):
         encoder.encode(66.0, output)  # Above maximum edge case
-    
+
     # Value within range should not raise
     assert encoder.encode(10.0, output)
 
 
 def test_scalar_encoder_non_integer_bucket_width():
     """Test that scalar encoder handles non-integer bucket widths correctly."""
-    # Arrange    
+    # Arrange
     params = ScalarEncoderParameters(
         minimum=10.0,
         maximum=20.0,
@@ -192,7 +195,7 @@ def test_scalar_encoder_non_integer_bucket_width():
         member_size=7,
         radius=0.0,
         category=False,
-        resolution=0.0
+        resolution=0.0,
     )
 
     encoder = ScalarEncoder(params, [7])
@@ -219,14 +222,14 @@ def test_scalar_encoder_round_to_nearest_multiple_of_resolution():
         member_size=13,
         radius=0.0,
         category=False,
-        resolution=1
+        resolution=1,
     )
 
     # Act and Assert - baseline
     encoder = ScalarEncoder(params, [13])
     assert encoder.size == 13
     assert encoder.dimensions == [13]
-    
+
     cases = [
         (10.00, [0, 1, 2]),
         (10.49, [0, 1, 2]),
@@ -259,7 +262,7 @@ def test_scalar_encoder_periodic_round_nearest_multiple_of_resolution():
         member_size=10,
         radius=0.0,
         category=False,
-        resolution=1
+        resolution=1,
     )
     encoder = ScalarEncoder(params, [10])
 
@@ -288,9 +291,10 @@ def test_scalar_encoder_periodic_round_nearest_multiple_of_resolution():
 def nearly_equal(a, b, tol=1e-5):
     return abs(a - b) <= tol
 
+
 def test_scalar_encoder_serialization():
     """Test serialization and deserialization of ScalarEncoder."""
-    
+
     # Arrange
     inputs = []
 
@@ -304,7 +308,7 @@ def test_scalar_encoder_serialization():
         member_size=0,
         radius=0.1337,
         category=False,
-        resolution=0.0
+        resolution=0.0,
     )
     inputs.append(ScalarEncoder(p, [100]))
 
@@ -329,7 +333,7 @@ def test_scalar_encoder_serialization():
         member_size=0,
         radius=0.1337,
         category=False,
-        resolution=0.0
+        resolution=0.0,
     )
 
     q.minimum = -1.0
@@ -348,7 +352,7 @@ def test_scalar_encoder_serialization():
         member_size=0,
         radius=0.1337,
         category=False,
-        resolution=0.0
+        resolution=0.0,
     )
     r.minimum = 0
     r.maximum = 65
@@ -364,8 +368,8 @@ def test_scalar_encoder_serialization():
         # Deserialize from JSON string
         enc = ScalarEncoder(p, [100])  # Temporary instance to load into
         # You may need to implement load_json() to load from a JSON string
-        # encoder.load_json(buf) 
-       # encoder = enc
+        # encoder.load_json(buf)
+        # encoder = enc
         print("DESERIALIZED:\n", encoder.save_json())
         p1 = encoder.parameters
         p2 = encoder.parameters

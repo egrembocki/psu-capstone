@@ -7,11 +7,7 @@ import pandas as pd
 """InputHandler singleton to pass a Data object to the Encoder layer. Implemented as a singleton layer handler for now, with methods to convert raw data to DataFrame, sequence, etc."""
 
 
-<<<<<<<< HEAD:src/psu_capstone/input_layer/InputHandler.py
-class InputHandler:    
-========
 class InputHandler:
->>>>>>>> main:archive/Project/src/main/InputLayer/InputHandler.py
     """
     Singleton InputHandler class to handle input data.
 
