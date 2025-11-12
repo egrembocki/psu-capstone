@@ -71,6 +71,17 @@ class SDR:
         self.__destroy_callbacks: List[Optional[sdr_callback_t]] = []
 
     # ------------------------------------------------------------------
+    @property
+    def size(self) -> int:
+        """Return the total number of bits in the SDR."""
+        return self.__size
+    
+    @property
+    def dimensions(self) -> List[int]:
+        """Return the dimensions of the SDR."""
+        return self.__dimensions
+
+    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
     def clear(self) -> None:
