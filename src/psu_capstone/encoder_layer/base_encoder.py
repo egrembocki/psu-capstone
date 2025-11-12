@@ -1,33 +1,35 @@
 from abc import ABC, abstractmethod
+import operator
 from typing_extensions import Self
-from psu_capstone.encoder_layer.sdr import SDR
+from functools import reduce
+
 from typing import List
 
 
 class BaseEncoder(ABC):
 
-   # def __new__(cls) -> Self:
-       # raise TypeError("Cannot instantiate abstract class")
- 
+    # private members
+    __size: int = 0
 
-    def __init__(self, dimensions: List[int] = []):
-        self._dimensions: List[int] = []
-        self._size: int = 0
+    __dimensions: List[int] = []
 
-        if dimensions is not None:
-            self.initialize(dimensions)
+    def __new__(cls) -> Self:
+        return super().__new__(cls)
+
+    def __init__(self, dimensions: List[int]):
+        self.__dimensions = dimensions
+        self.__size = reduce(operator.mul, dimensions, 1)
+
+        print(f"Initialized BaseEncoder with dimensions: {self.__dimensions}"
+              f" and size: {self.__size}")
 
     @property
     def dimensions(self) -> List[int]:
-        return self._dimensions
+        return self.__dimensions
 
     @property
     def size(self) -> int:
-        return self._size
-
-    def initialize(self, dimensions: List[int]):
-        self._dimensions = list(dimensions)
-        self._size = SDR(dimensions).__size
+        return self.__size
 
     def reset(self):
         raise NotImplementedError("Not implemented yet")
