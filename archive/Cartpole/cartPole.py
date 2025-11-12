@@ -1,14 +1,13 @@
 import os
-
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")  # Reduce TF verbosity
+import time
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import tensorflow as tf
-
 from tensorflow import keras  # type: ignore
-from pathlib import Path
-import time
+
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")  # Reduce TF verbosity
 
 
 def play_one_step(env, model, obs):
@@ -24,9 +23,7 @@ def play_one_step(env, model, obs):
         x = tf.convert_to_tensor(obs, dtype=tf.float32)
         x = tf.reshape(x, (1, -1))
         left_proba = model(x)  # shape (1,1)
-        action_left_bool = (
-            tf.random.uniform(tf.shape(left_proba)) < left_proba
-        )  # bool (1,1)
+        action_left_bool = tf.random.uniform(tf.shape(left_proba)) < left_proba  # bool (1,1)
         # Probability of chosen action:
         prob_action = tf.where(action_left_bool, left_proba, 1.0 - left_proba)
         log_prob = tf.math.log(prob_action + 1e-8)
@@ -50,7 +47,7 @@ def play_multiple_episodes(env, model, episodes, max_steps, render=True):
         current_grads = []
         obs, info = env.reset()
 
-        print(f"Episode {episode+1} starting...")
+        print(f"Episode {episode + 1} starting...")
         # print(obs)
 
         for step in range(max_steps):
@@ -60,7 +57,7 @@ def play_multiple_episodes(env, model, episodes, max_steps, render=True):
             if render:
                 env.render()
             if done:
-                print(f"Episode {episode+1} finished after {step+1} steps")
+                print(f"Episode {episode + 1} finished after {step + 1} steps")
                 break
 
         all_rewards.append(current_rewards)
@@ -78,9 +75,7 @@ def discount_rewards(rewards, discount_rate):
 
 
 def discount_and_normalize_rewards(all_rewards, discount_rate):
-    all_discounted_rewards = [
-        discount_rewards(rewards, discount_rate) for rewards in all_rewards
-    ]
+    all_discounted_rewards = [discount_rewards(rewards, discount_rate) for rewards in all_rewards]
     flat_rewards = np.concatenate(all_discounted_rewards)
     reward_mean = flat_rewards.mean()
     reward_std = flat_rewards.std()
@@ -134,7 +129,7 @@ def watch(
                     time.sleep(delay)
                 if max_steps_per_episode and steps >= max_steps_per_episode:
                     break
-            print(f"Watch episode {ep+1}: steps={steps}, reward={ep_reward:.1f}")
+            print(f"Watch episode {ep + 1}: steps={steps}, reward={ep_reward:.1f}")
     finally:
         env.close()
 
@@ -198,9 +193,7 @@ def train(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Train and save a CartPole policy gradient model."
-    )
+    parser = argparse.ArgumentParser(description="Train and save a CartPole policy gradient model.")
     parser.add_argument(
         "--iterations",
         type=int,
@@ -213,15 +206,9 @@ if __name__ == "__main__":
         default=10,
         help="Episodes collected per update",
     )
-    parser.add_argument(
-        "--max-steps", type=int, default=200, help="Max steps per episode"
-    )
-    parser.add_argument(
-        "--discount", type=float, default=0.95, help="Discount rate (gamma)"
-    )
-    parser.add_argument(
-        "--no-render", action="store_true", help="Disable environment rendering"
-    )
+    parser.add_argument("--max-steps", type=int, default=200, help="Max steps per episode")
+    parser.add_argument("--discount", type=float, default=0.95, help="Discount rate (gamma)")
+    parser.add_argument("--no-render", action="store_true", help="Disable environment rendering")
     parser.add_argument(
         "--save-name",
         type=str,
@@ -234,12 +221,8 @@ if __name__ == "__main__":
         default=None,
         help="Path to existing .keras model to continue training (relative or absolute)",
     )
-    parser.add_argument(
-        "--watch", action="store_true", help="Render watch session after training"
-    )
-    parser.add_argument(
-        "--watch-episodes", type=int, default=3, help="Episodes to watch"
-    )
+    parser.add_argument("--watch", action="store_true", help="Render watch session after training")
+    parser.add_argument("--watch-episodes", type=int, default=3, help="Episodes to watch")
     parser.add_argument(
         "--fps", type=int, default=60, help="Render FPS during watch (0 = max speed)"
     )
@@ -304,9 +287,7 @@ if __name__ == "__main__":
         else:
             model = keras.Sequential(
                 [
-                    keras.layers.Dense(
-                        n_hidden[0], activation="elu", input_shape=[n_inputs]
-                    ),
+                    keras.layers.Dense(n_hidden[0], activation="elu", input_shape=[n_inputs]),
                     keras.layers.Dense(n_hidden[1], activation="relu"),
                     keras.layers.Dense(n_outputs, activation="sigmoid"),
                 ]

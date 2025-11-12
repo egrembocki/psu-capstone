@@ -1,0 +1,155 @@
+name: CI
+
+permissions: 
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feature/*"
+      - "fix/*"
+      - "bugfix/*"
+      - "hotfix/*"
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_call:
+    inputs:
+      mypy_enabled:
+        description: 'Enable mypy type checking (configured in pyproject.toml)'
+        required: false
+        default: false
+        type: boolean
+      pydocstyle_enabled:
+        description: 'Enable pydocstyle docstring checking (configured in pyproject.toml)'
+        required: false
+        default: false
+        type: boolean
+      ruff_enabled:
+        description: 'Enable ruff linting and formatting (configured in pyproject.toml)'
+        required: false
+        default: false
+        type: boolean
+      pytest_args:
+        description: 'Additional pytest args'
+        required: false
+        default: '--junitxml=pytest-results.xml'
+        type: string
+      coverage_enabled:
+        description: 'Whether to run coverage analysis'
+        required: false
+        default: true
+        type: boolean
+      upload_artifacts:
+        description: 'Whether to upload test artifacts'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      latest-python-version: ${{ steps.get-latest-python.outputs.latest-version }}
+    steps:
+      - name: Get Latest Python Version
+        id: get-latest-python
+        shell: bash
+        run: |-
+          # Parse the JSON array, sort versions, and get the latest version
+          versions='["3.10", "3.11", "3.12", "3.13"]'
+          latest=$(echo "$versions" | jq -r '.[]' | sort -V | tail -n 1)
+          echo "latest-version=${latest}" >> $GITHUB_OUTPUT
+          echo "Latest Python version is $latest"
+
+  ci:
+    name: Lint & Test (Python ${{ matrix.python-version }})
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    strategy:
+      matrix:
+        # python-version: ${{ fromJSON(github.event.inputs.python_versions) }}
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+      fail-fast: true
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: Set up Python env
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@85856786d1ce8acfbcc2f13a5f3fbd6b938f9f41
+        with:
+          version: "latest"
+      
+      - name: Install dependencies
+        run: |-
+          uv sync --group dev --group tests --group linters --group formatters
+      
+      - name: Lint code
+        if: matrix.python-version == needs.setup.outputs.latest-python-version
+        uses: ./.github/actions/python-lint
+        with: 
+          # Use configuration from pyproject.toml
+          flake8_args: ""
+          fail_on_error: true
+          # source_path: './src'
+          mypy_enabled: false
+          pydoclint_enabled: false
+          ruff_enabled: false
+      
+      - name: Format check
+        if: matrix.python-version == needs.setup.outputs.latest-python-version
+        uses: ./.github/actions/python-fmt
+        with:
+          # Use configuration from pyproject.toml
+          isort_args: ""
+          black_args: ""
+          fail_on_error: true
+          # source_path: './src'
+          ruff_enabled: false
+      
+      - name: Run tests
+        uses: ./.github/actions/python-tests
+        with:
+          install_dev_dependencies: "--group dev --group tests --group linters --group formatters --all-extras"
+          pytest_args: '--junitxml=pytest-results.xml'
+          coverage: ${{true && matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
+          show_configuration: ${{ matrix.python-version == needs.setup.outputs.latest-python-version && 'true' || 'false' }}
+          coverage_format: xml
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: ${{ inputs.upload_artifacts && always()}}
+        with:
+          name: test-results-python-${{ matrix.python-version }}
+          path: |
+            pytest-results.xml
+          retention-days: 14
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: ${{ inputs.upload_artifacts && inputs.coverage_enabled && matrix.python-version == needs.setup.outputs.latest-python-version && always() }}
+        with:
+          name: test-coverage-report
+          path: |
+            coverage.xml
+          retention-days: 14

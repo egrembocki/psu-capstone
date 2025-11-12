@@ -153,6 +153,7 @@ env.bak/
 venv.bak/
 .vscode
 .requirements.txt
+.flake8
 
 
 # Spyder project settings
