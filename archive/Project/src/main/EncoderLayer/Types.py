@@ -6,20 +6,19 @@ This is a structural translation, not a drop-in FFI layer.
 """
 
 from ctypes import (
+    c_double,
+    c_float,
     c_int8,
     c_int16,
-    c_uint16,
     c_int32,
-    c_uint32,
     c_int64,
-    c_uint64,
-    c_float,
-    c_double,
-    c_void_p,
     c_size_t,
+    c_uint16,
+    c_uint32,
+    c_uint64,
+    c_void_p,
 )
 from enum import IntEnum
-
 
 # ----------------------------------------------------------------------
 # Configuration flags (Python stand-ins for the C++ preprocessor macros)

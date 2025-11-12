@@ -4,7 +4,7 @@ from typing import List
 
 import numpy as np
 from SDR import SDR
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+from BaseEncoder import BaseEncoder
 
 
 @dataclass

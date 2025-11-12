@@ -1,8 +1,8 @@
-import pandas as pd
-import numpy as np
 import os
 from typing import Union
 
+import numpy as np
+import pandas as pd
 
 """InputHandler singleton to pass a Data object to the Encoder layer. Implemented as a singleton layer handler for now, with methods to convert raw data to DataFrame, sequence, etc."""
 

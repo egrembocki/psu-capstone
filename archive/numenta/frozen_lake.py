@@ -4,7 +4,9 @@ from pathlib import Path
 
 import gymnasium as gym
 from gymnasium import spaces
+
 from numenta.agent import Environment
+
 <<<<<<<< HEAD:numenta/frozen_lake.py
 ========
 from numenta.utils import get_logger
