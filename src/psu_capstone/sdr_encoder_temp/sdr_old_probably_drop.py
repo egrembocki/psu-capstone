@@ -24,17 +24,10 @@ class SparseDistributedRepresentation:
         self.coordinates_valid = False
 
         # These hooks are called every time the SDR's value changes. These can be NUll
-<<<<<<<< HEAD:Project/src/main/SDR_Encoder_Temp/Sdr_old_probably_drop.py
-        # Pointers! See methods addCallback & removeCallback for API details
-        self.callbacks: List[Callable[[], None]] = []
-        # These hooks are called when the SDR is destroyed. These can be NULL pointers!
-        # See methods addDestroyCallback and removeDestroyCallback for API details.
-========
         # Pointers! See methods add_callback & remove_callback for API details
         self.callbacks: List[Callable[[], None]] = []
         # These hooks are called when the SDR is destroyed. These can be NULL pointers!
         # See methods add_destroy_callback and remove_destroy_callback for API details.
->>>>>>>> origin/main:src/psu_capstone/sdr_encoder_temp/sdr_old_probably_drop.py
         self.destroy_callbacks: List[Callable[[], None]] = []
         if dimensions is not None:
             self.initialize(dimensions)
