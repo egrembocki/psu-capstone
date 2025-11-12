@@ -2,7 +2,6 @@
 
 
 from typing import List, Union
-from numpy import double
 from typing_extensions import Self
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
@@ -35,7 +34,7 @@ class ScalarEncoderParameters:
     """Resolution of the encoder."""
 
     #active_bits_or_sparsity: Union[int, float] = 0
-    #member_size_or_radius_or_category_or_resolution: Union[int, float, bool,double] = 0
+    #member_size_or_radius_or_category_or_resolution: Union[int, float, bool, double] = 0
 
     """perfect use case for a union : either int or float : active_bits xor sparsity
     perfect use case for a union : int or float or bool or double : member_size xor radius xor category xor resolution"""
@@ -45,7 +44,21 @@ class ScalarEncoder(BaseEncoder):
 
     def __new__(cls, parameters: ScalarEncoderParameters, dimensions: List[int]) -> Self:
         """Create a new instance of ScalarEncoder."""
-        
+        cls.minimum = 0.0
+        cls.maximum = 100.0
+        cls.clipInput = True
+        cls.periodic = False
+
+        # Union implementation pending
+        cls.active_bits = 5
+        cls.sparsity = 0.0
+
+        # Union implementation pending
+        cls.member_size = 10
+        cls.radius = 0.0
+        cls.category = False
+        cls.resolution = 0.0
+
         return super().__new__(cls)
 
     def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
@@ -62,16 +75,18 @@ class ScalarEncoder(BaseEncoder):
         self.category = parameters.category
         self.activeBits = parameters.active_bits
         self.sparsity = parameters.sparsity
-        self._size = parameters.member_size
+        self.member_size = parameters.member_size
         self.radius = parameters.radius
         self.resolution = parameters.resolution
 
-    def encode(self, input_value: float, output: SDR) -> None:
+    def encode(self, input_value: float, output: SDR) -> bool:
         assert output.__size == self.size, "Output SDR size does not match encoder size."
+
+        self.__sdr = output
 
         if math.isnan(input_value):
             output.zero()
-            return
+            return False
 
         if self.clipInput:
             if self.periodic:
@@ -100,6 +115,10 @@ class ScalarEncoder(BaseEncoder):
             sparse.sort()
 
         output.set_sparse(sparse)
+        
+        self.__sdr = output
+
+        return self.__sdr == output
 
 
 
@@ -109,6 +128,7 @@ class ScalarEncoder(BaseEncoder):
 
 #After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters) -> ScalarEncoderParameters:
+        """Validate and compute derived parameters for the Scalar Encoder. This may change if we can get the Union to work properly."""
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([
             parameters.active_bits > 0,
@@ -146,34 +166,35 @@ class ScalarEncoder(BaseEncoder):
             args.active_bits = round(args.member_size * args.sparsity)
             assert args.active_bits > 0, "sparsity and size must be given so that sparsity * size > 0!"
         if args.periodic:
-            extentWidth = args.maximum - args.minimum
+            extent_width = args.maximum - args.minimum
         else:
-            maxInclusive = math.nextafter(args.maximum, math.inf)
-            extentWidth = maxInclusive - args.minimum
+            max_inclusive = math.nextafter(args.maximum, math.inf)
+            extent_width = max_inclusive - args.minimum
         if args.member_size > 0:
             if args.periodic:
-                args.resolution = extentWidth / args.member_size
+                args.resolution = (extent_width / args.member_size)
             else:
-                nBuckets = args.member_size - (args.active_bits -1)
-                args.resolution = extentWidth / (nBuckets-1)
+                n_buckets = args.member_size - (args.active_bits -1)
+                args.resolution = (extent_width / (n_buckets-1))
         else:
             if args.radius > 0.0:
-                args.resolution = args.radius / args.active_bits
+                args.resolution = (args.radius / args.active_bits)
 
-            neededBands = math.ceil(extentWidth / args.resolution)
+            needed_bands = math.ceil(extent_width / args.resolution)
             if args.periodic:
-                args.member_size = neededBands
+                args.member_size = needed_bands
             else:
-                args.member_size = neededBands + (args.active_bits - 1)
+                args.member_size = needed_bands + (args.active_bits - 1)
 
         # Sanity check the parameters.
         assert args.member_size > 0
         assert args.active_bits > 0
         assert args.active_bits < args.member_size
 
-        args.radius = args.active_bits * args.resolution
+        args.radius = args.active_bits * (args.resolution)
         assert args.radius > 0
 
         args.sparsity = args.active_bits / float(args.member_size)
         assert args.sparsity > 0
+        
         return args

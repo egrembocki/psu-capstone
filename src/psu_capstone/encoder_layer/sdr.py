@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import random
 
-
 from math import prod
 from typing import Callable, Iterable, List, Optional, Sequence
+from typing_extensions import Self
+
 
 # Type aliases mirroring the C++ implementation
 
@@ -20,9 +21,7 @@ elem_dense = int  #: Dense element type used for storing SDR bits.
 elem_sparse = int  #: Sparse index type mirroring the C++ implementation.
 sdr_dense_t = List[elem_dense]  #: Alias for the dense SDR container type.
 sdr_sparse_t = List[elem_sparse]  #: Alias for the sparse SDR container type.
-sdr_coordinate_t = List[
-    List[int]
-]  #: Alias representing coordinates grouped per dimension.
+sdr_coordinate_t = List[List[int]]  #: Alias representing coordinates grouped per dimension.
 sdr_callback_t = Callable[[], None]  #: Callback signature invoked on SDR state changes.
 
 
@@ -51,7 +50,16 @@ class SDR:
         __destroy_callbacks: Callbacks invoked during ``destroy``.
     """
 
-    def __init__(self, dimensions: Sequence[int]) -> None:
+    __size: int
+    __dimensions: List[int]
+
+    def __new__(cls, dimensions: Sequence[int]) -> Self:
+        """Create a new instance of SDR."""
+        cls.__dimensions = []
+        cls.__size = 0
+        return super().__new__(cls)
+
+    def __init__(self, dimensions: Sequence[int]):
         """Create a new SDR with the given dimensions.
 
         Args:
@@ -64,17 +72,15 @@ class SDR:
         assert len(self.__dimensions) > 0, "SDR must have at least one dimension."
 
         self.__size: int = prod(int(dim) for dim in self.__dimensions)
-
+        assert self.__size > 0, "SDR size must be greater than zero."   
+        self.__callbacks: List[Optional[sdr_callback_t]] = []
+        self.__destroy_callbacks: List[Optional[sdr_callback_t]] = []
         self._dense: sdr_dense_t = [elem_dense(0)] * int(self.__size)
         self._sparse: sdr_sparse_t = []
         self._coordinates: sdr_coordinate_t = [[] for _ in self.__dimensions]
-
         self._dense_valid = True
         self._sparse_valid = False
         self._coordinates_valid = False
-
-        self.__callbacks: List[Optional[sdr_callback_t]] = []
-        self.__destroy_callbacks: List[Optional[sdr_callback_t]] = []
 
     # ------------------------------------------------------------------
     # Internal helpers
