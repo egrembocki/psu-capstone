@@ -1,78 +1,193 @@
+"""Scalar Encoder Module implementation. From NuPic Numenta Cpp ported to python
+/**
+ * These four (4) members define the total number of bits in the output:
+ *      size,
+ *      radius,
+ *      category,
+ *      resolution.
+ *
+ * These are mutually exclusive and only one of them should be non-zero when
+ * constructing the encoder.
+ */
+
+"""
+
 import math
 from dataclasses import dataclass
-from typing import List
+from typing import Union
 
-import numpy as np
-from SDR import SDR
-from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 
 
 @dataclass
 class ScalarEncoderParameters:
+
     minimum: float
     maximum: float
+    """Min and Max
+     * Members "minimum" and "maximum" define the range of the input signal.
+     * These endpoints are inclusive.
+     */"""
+
     clip_input: bool
+    """Whether to clip inputs outside the min/max range.
+       /**
+     * Member "clipInput" determines whether to allow input values outside the
+     * range [minimum, maximum].
+     * If true, the input will be clipped into the range [minimum, maximum].
+     * If false, inputs outside of the range will raise an error.
+     */"""
+
     periodic: bool
+    """Whether the encoder is periodic (circular) or not.
+    /**
+     * Member "periodic" controls what happens near the edges of the input
+     * range.
+     *
+     * If true, then the minimum & maximum input values are the same and the
+     * first and last bits of the output SDR are adjacent.  The contiguous
+     * block of 1's wraps around the end back to the beginning.
+     *
+     * If false, then minimum & maximum input values are the endpoints of the
+     * input range, are not adjacent, and activity does not wrap around.
+     */
+    """
+
     category: bool
+    """Whether the encoder is a category encoder.
+    /**
+     * Member "category" means that the inputs are enumerated categories.
+     * If true then this encoder will only encode unsigned integers, and all
+     * inputs will have unique / non-overlapping representations.
+     */
+    """
     active_bits: int
     sparsity: float
-    member_size: int
+    """Number of active bits or sparsity level.
+     /**
+     * Member "activeBits" is the number of true bits in the encoded output SDR.
+     * The output encodings will have a contiguous block of this many 1's.
+     */
+
+      /**
+     * Member "sparsity" is an alternative way to specify the member "activeBits".
+     * Sparsity requires that the size to also be specified.
+     * Specify only one of: activeBits or sparsity.
+     */
+
+    """
+    size: int
+    """Total number of bits in the output SDR.
+     /**
+     * Member "size" is the total number of bits in the encoded output SDR.
+     */
+    """
     radius: float
+    """Approximate input range (width) covered by the active bits.
+    /**
+     * Member "radius" Two inputs separated by more than the radius have
+     * non-overlapping representations. Two inputs separated by less than the
+     * radius will in general overlap in at least some of their bits. You can
+     * think of this as the radius of the input.
+     */
+    """
     resolution: float
+    """The smallest difference between two inputs that produces different outputs.
+      /**
+     * Member "resolution" Two inputs separated by greater than, or equal to the
+     * resolution are guaranteed to have different representations.
+     */"""
+
+    size_or_radius_or_category_or_resolution: Union[int, float, bool]
+    """Helper field to indicate which of size, radius, category, or resolution is specified."""
+
+    active_bits_or_sparsity: Union[int, float]
+    """Helper field to indicate which of active_bits or sparsity is specified."""
 
 
 class ScalarEncoder(BaseEncoder):
+    """
+    /**
+     * Encodes a real number as a contiguous block of 1's.
+     *
+     * Description:
+     * The ScalarEncoder encodes a numeric (floating point) value into an array
+     * of bits. The output is 0's except for a contiguous block of 1's. The
+     * location of this contiguous block varies continuously with the input value.
+     *
+     * To inspect this run:
+     * $ python -m htm.examples.encoders.scalar_encoder --help
+     */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
-        super().__init__(dimensions)
+    def __init__(self, parameters: ScalarEncoderParameters):
+        super().__init__(dimensions=[1, parameters.size])
+
         parameters = self.check_parameters(parameters)
 
-        self.minimum = parameters.minimum
-        self.maximum = parameters.maximum
-        self.clip_input = parameters.clip_input
-        self.periodic = parameters.periodic
-        self.category = parameters.category
-        self.active_bits = parameters.active_bits
-        self.sparsity = parameters.sparsity
-        self._size = parameters.member_size
-        self.radius = parameters.radius
-        self.resolution = parameters.resolution
+        self._minimum = parameters.minimum
+        self._maximum = parameters.maximum
+        self._clip_input = parameters.clip_input
+        self._periodic = parameters.periodic
+        self._category = parameters.category
+        self._active_bits = parameters.active_bits
+        self._sparsity = parameters.sparsity
+        self._size = parameters.size
+        self._radius = parameters.radius
+        self._resolution = parameters.resolution
 
-    def encode(self, input_value: float, output: SDR) -> None:
+    def encode(self, input_value: float, output: SDR) -> bool:
+        """Encode the input value into the output SDR."""
+
+        # check that output SDR size matches encoder size
         assert output.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
             output.zero()
-            return
+            return False
 
-        if self.clip_input:
-            if self.periodic:
-                raise NotImplementedError("Periodic input clipping not implemented.")
+        elif self._clip_input:
+            if self._periodic:
+                """TODO: implement modlus to inputs"""
+                input_value = input_value % self._maximum
+                # raise NotImplementedError("Periodic input clipping not implemented.")
             else:
-                input_value = max(input_value, self.minimum)
-                input_value = min(input_value, self.maximum)
+                input_value = max(input_value, self._minimum)
+                input_value = min(input_value, self._maximum)
         else:
-            if self.category:
-                if input_value != float(int(input_value)):
-                    raise ValueError("Input to category encoder must be an unsigned integer!")
-            if not (self.minimum <= input_value <= self.maximum):
+            if self._category and input_value != float(int(input_value)):
+                raise ValueError("Input to category encoder must be an unsigned integer!")
+            if not (self._minimum <= input_value <= self._maximum):
                 raise ValueError(
-                    f"Input must be within range [{self.minimum}, {self.maximum}]! "
+                    f"Input must be within range [{self._minimum}, {self._maximum}]! "
                     f"Received {input_value}"
                 )
 
-        start = int(round((input_value - self.minimum) / self.resolution))
+        start = int(round((input_value - self._minimum) / self._resolution))
 
-        if not self.periodic:
-            start = min(start, output.size - self.active_bits)
+        """Handle edge case where start + active_bits exceeds output size.
+          // The endpoints of the input range are inclusive, which means that the
+          // maximum value may round up to an index which is outside of the SDR. Correct
+          // this by pushing the endpoint (and everything which rounds to it) onto the
+          // last bit in the SDR.
+        """
+        if not self._periodic:
+            start = min(start, output.size - self._active_bits)
 
-        sparse = list(range(start, start + self.active_bits))
+        sparse = output.get_sparse()
+        sparse[:] = list(range(start, start + self._active_bits))
 
-        if self.periodic:
-            sparse = [bit % output.size for bit in sparse]
+        if self._periodic:
+            for i, bit in enumerate(sparse):
+                if bit >= output.size:
+                    sparse[i] = bit - output.size
             sparse.sort()
 
-        output.setSparse(sparse)
+        output.set_sparse(sparse)
+
+        self._sdr = output
+
+        return self.sdr == output
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
@@ -84,7 +199,7 @@ class ScalarEncoder(BaseEncoder):
         ), "Specified both: 'active_bits', 'sparsity'. Specify only one of them."
         num_size_args = sum(
             [
-                parameters.member_size > 0,
+                parameters.size > 0,
                 parameters.radius > 0.0,
                 bool(parameters.category),
                 parameters.resolution > 0.0,
@@ -115,10 +230,8 @@ class ScalarEncoder(BaseEncoder):
             args.radius = 1.0
         if args.sparsity:
             assert 0.0 <= args.sparsity <= 1.0
-            assert (
-                args.member_size > 0
-            ), "Argument 'sparsity' requires that the 'size' also be given."
-            args.active_bits = round(args.member_size * args.sparsity)
+            assert args.size > 0, "Argument 'sparsity' requires that the 'size' also be given."
+            args.active_bits = round(args.size * args.sparsity)
             assert (
                 args.active_bits > 0
             ), "sparsity and size must be given so that sparsity * size > 0!"
@@ -127,11 +240,11 @@ class ScalarEncoder(BaseEncoder):
         else:
             max_inclusive = math.nextafter(args.maximum, math.inf)
             extent_width = max_inclusive - args.minimum
-        if args.member_size > 0:
+        if args.size > 0:
             if args.periodic:
-                args.resolution = extent_width / args.member_size
+                args.resolution = extent_width / args.size
             else:
-                n_buckets = args.member_size - (args.active_bits - 1)
+                n_buckets = args.size - (args.active_bits - 1)
                 args.resolution = extent_width / (n_buckets - 1)
         else:
             if args.radius > 0.0:
@@ -139,49 +252,18 @@ class ScalarEncoder(BaseEncoder):
 
             needed_bands = math.ceil(extent_width / args.resolution)
             if args.periodic:
-                args.member_size = needed_bands
+                args.size = needed_bands
             else:
-                args.member_size = needed_bands + (args.active_bits - 1)
+                args.size = needed_bands + (args.active_bits - 1)
 
         # Sanity check the parameters.
-        assert args.member_size > 0
+        assert args.size > 0
         assert args.active_bits > 0
-        assert args.active_bits < args.member_size
+        assert args.active_bits < args.size
 
         args.radius = args.active_bits * args.resolution
         assert args.radius > 0
 
-        args.sparsity = args.active_bits / float(args.member_size)
+        args.sparsity = args.active_bits / float(args.size)
         assert args.sparsity > 0
         return args
-
-
-# Tests
-params = ScalarEncoderParameters(
-    minimum=0,
-    maximum=100,
-    clip_input=False,
-    periodic=False,
-    category=False,
-    active_bits=21,
-    sparsity=0,
-    member_size=500,
-    radius=0,
-    resolution=0,
-)
-"""encoder = ScalarEncoder(params ,dimensions=[100])
-sdr = SDR(dimensions=[10, 10])
-print(sdr.size)
-sdr.setSparse([0,5,22,99])
-print(sdr.getSparse())
-sdr.zero()
-print(sdr.getSparse())
-
-encoder2 = ScalarEncoder(params ,dimensions=[100])
-print(encoder2.size)
-print(encoder2.dimensions)"""
-
-encoder3 = ScalarEncoder(params, dimensions=[params.member_size])
-output = SDR(dimensions=[params.member_size])
-encoder3.encode(7.3, output)
-print(output.getSparse())

@@ -1,22 +1,49 @@
-from abc import ABC, abstractmethod
-from typing import List
+"""Base class for all encoders -- from NuPic Numenta Cpp ported to python.
+/**
+ * Base class for all encoders.
+ * An encoder converts a value to a sparse distributed representation.
+ *
+ * Subclasses must implement method encode and Serializable interface.
+ * Subclasses can optionally implement method reset.
+ *
+ * There are several critical properties which all encoders must have:
+ *
+ * 1) Semantic similarity:  Similar inputs should have high overlap.  Overlap
+ * decreases smoothly as inputs become less similar.  Dissimilar inputs have
+ * very low overlap so that the output representations are not easily confused.
+ *
+ * 2) Stability:  The representation for an input does not change during the
+ * lifetime of the encoder.
+ *
+ * 3) Sparsity: The output SDR should have a similar sparsity for all inputs and
+ * have enough active bits to handle noise and subsampling.
+ *
+ * Reference: https://arxiv.org/pdf/1602.05925.pdf
+ */
 
+"""
+
+from abc import ABC, abstractmethod
+from math import prod
+from typing import List
 from psu_capstone.encoder_layer.sdr import SDR
 
 
 class BaseEncoder(ABC):
+    """Base class for all encoders"""
 
     def __init__(self, dimensions: List[int]):
-        self._dimensions: List[int] = []
-        self._size: int = 0
+        """Initialize the BaseEncoder.
+           /**
+        * Members dimensions & size describe the shape of the encoded output SDR.
+        * Size is the total number of bits in the result.
+        * Dimensions is a list of integers describing the shape of the SDR
+           (input space).
+        */"""
+        self._dimensions: List[int] = dimensions
+        self._size: int = prod(int(dim) for dim in self._dimensions)
+        self._sdr: SDR = SDR(self._dimensions)
 
-        if dimensions is not None:
-            self.initialize(dimensions)
-
-    #
-    # Members dimensions & size describe the shape of the encoded output SDR.
-    # This is the total number of bits in the result.
-    #
     @property
     def dimensions(self) -> List[int]:
         return self._dimensions
@@ -25,13 +52,13 @@ class BaseEncoder(ABC):
     def size(self) -> int:
         return self._size
 
-    def initialize(self, dimensions: List[int]):
-        self._dimensions = list(dimensions)
-        self._size = SDR(dimensions).size
+    @property
+    def sdr(self) -> SDR:
+        return self._sdr
 
     def reset(self):
         pass
 
     @abstractmethod
-    def encode(self, input_value, output):
+    def encode(self, input_value: float, output_sdr: SDR) -> bool:
         raise NotImplementedError("Subclasses must implement this method")
