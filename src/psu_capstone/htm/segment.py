@@ -1,7 +1,7 @@
 # htm_core/segment.py
 from __future__ import annotations
 
-from typing import List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional, Set
 
 if TYPE_CHECKING:
     from .cell import Cell

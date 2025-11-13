@@ -1,20 +1,20 @@
 # htm_core/temporal_memory.py
 from __future__ import annotations
 
-from typing import Dict, Set, List, Optional, Sequence, Tuple
 import random
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
-from .constants import (
-    SEGMENT_ACTIVATION_THRESHOLD,
-    PERMANENCE_INC,
-    PERMANENCE_DEC,
-    INITIAL_DISTAL_PERM,
-    NEW_SYNAPSE_MAX,
-)
 from .cell import Cell
 from .column import Column
+from .constants import (
+    INITIAL_DISTAL_PERM,
+    NEW_SYNAPSE_MAX,
+    PERMANENCE_DEC,
+    PERMANENCE_INC,
+    SEGMENT_ACTIVATION_THRESHOLD,
+)
 from .distal_synapse import DistalSynapse
 from .segment import Segment
 

@@ -5,9 +5,9 @@ from typing import List, Tuple
 
 import numpy as np
 
+from .cell import Cell
 from .constants import CONNECTED_PERM, MIN_OVERLAP
 from .synapse import Synapse
-from .cell import Cell
 
 
 class Column:

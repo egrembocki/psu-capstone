@@ -3,7 +3,7 @@
 # htm_core/cell.py
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from .segment import Segment

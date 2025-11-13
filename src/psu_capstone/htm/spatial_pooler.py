@@ -4,22 +4,22 @@
 from __future__ import annotations
 
 from typing import (
-    List,
     Dict,
-    Tuple,
+    List,
     Sequence,
+    Tuple,
     Union,
 )
 
 import numpy as np
 
+from .column import Column
 from .constants import (
     CONNECTED_PERM,
-    PERMANENCE_INC,
-    PERMANENCE_DEC,
     DESIRED_LOCAL_ACTIVITY,
+    PERMANENCE_DEC,
+    PERMANENCE_INC,
 )
-from .column import Column
 from .synapse import Synapse
 
 
