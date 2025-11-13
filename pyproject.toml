@@ -12,6 +12,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+dependencies = [
+ "sympy>=1.11",
+ "pandas>=2.1"
+]
+
+
 [dependency-groups]
 dev = ["mypy>=1.17.0", "snakeviz>=2.2.2", "pre-commit>=4.2.0"]
 tests = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "pytest-mock>=3.14.0"]
