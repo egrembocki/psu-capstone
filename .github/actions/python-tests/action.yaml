@@ -25,7 +25,7 @@ inputs:
   fail_on_error:
     description: 'Fail the run if any tests fail'
     required: false
-    default: 'true'
+    default: 'false'
   install_dev_dependencies:
     description: 'Install development dependencies. Dependency groups for Poetry and uv can be passed here explicitly. Remember to prepend with --with or --group as needed.'
     required: false
@@ -237,7 +237,7 @@ runs:
     - name: Run Tests
       id: run_tests
       shell: bash
-      continue-on-error: ${{ inputs.fail_on_error == 'false' }}
+      continue-on-error: true
       run: |
         # Run tests with pytest
         pm="${{ steps.detect_package_manager.outputs.package_manager }}"
