@@ -3,24 +3,24 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - pip
   - numpy           
   - pandas          
   - pip:
-      - tensorflow
-      - keras
-      - gymnasium[classic_control]
-      - matplotlib         
-      - scikit-learn
-      - stable-baselines3
+      - pre-commit
+      - pytest
+      - mmh3
       - pdoc
       - flake8
       - black
       - randomname
       - openpyxl
-      - mmh3
-      - pre-commit
-      - pytest
+      - matplotlib         
+      - scikit-learn
+      - gymnasium[classic_control]
+      - keras
+      - tensorflow
+      - stable-baselines3 
       
       
