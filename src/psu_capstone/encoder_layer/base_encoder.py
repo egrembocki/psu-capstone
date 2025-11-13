@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from psu_capstone.encoder_layer.sdr import SDR
+from SDR import SDR
 
 
 class BaseEncoder(ABC):
 
-    def __init__(self, dimensions: List[int]):
+    def __init__(self, dimensions: List[int] = None):
         self._dimensions: List[int] = []
         self._size: int = 0
 

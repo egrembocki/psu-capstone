@@ -6,6 +6,9 @@ import gymnasium as gym
 from gymnasium import spaces
 
 from numenta.agent import Environment
+from numenta.utils import get_logger
+
+sys.path.append(str(Path(__file__).parents[1]))
 
 
 class GymAdapter(gym.Env):
@@ -53,11 +56,7 @@ class FrozenLakeEnvironment(Environment):
         # def __init__(self):
         # generating the frozen lake environment
         self.env = gym.make(
-            "FrozenLake-v1",
-            desc=None,
-            map_name="4x4",
-            is_slippery=False,
-            render_mode=render_mode,
+            "FrozenLake-v1", desc=None, map_name="4x4", is_slippery=False, render_mode=render_mode
         )
 
         self.action_space = self.env.action_space  # action_space attribute
@@ -85,14 +84,7 @@ class FrozenLakeEnvironment(Environment):
         state, reward, done, truncated, info = self.env.step(action if action else 0)  # type: ignore
         self.update_position(state)  # updating the agents position based on the action
         surrounding_tiles = self.get_surrounding_tiles(self.row, self.col)
-        return (
-            state,
-            reward,
-            done,
-            truncated,
-            info,
-            surrounding_tiles,
-        )  # action chosen by the agent
+        return state, reward, done, truncated, info, surrounding_tiles  # action chosen by the agent
 
     def run_commands(self, motor_commands):
         action = motor_commands["move"]
