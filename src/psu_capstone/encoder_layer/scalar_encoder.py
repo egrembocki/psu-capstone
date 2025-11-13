@@ -14,7 +14,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Union
+from typing import List, Union
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr_ import SDR
@@ -108,23 +108,6 @@ class ScalarEncoderParameters:
     size_or_radius_or_category_or_resolution: Union[int, float, bool]
     """Helper field to indicate which of size, radius, category, or resolution is specified."""
 
-class ScalarEncoder(BaseEncoder):
-    """
-    /**
-     * Encodes a real number as a contiguous block of 1's.
-     *
-     * Description:
-     * The ScalarEncoder encodes a numeric (floating point) value into an array
-     * of bits. The output is 0's except for a contiguous block of 1's. The
-     * location of this contiguous block varies continuously with the input value.
-     *
-     * To inspect this run:
-     * $ python -m htm.examples.encoders.scalar_encoder --help
-     */"""
-
-    def __init__(self, parameters: ScalarEncoderParameters):
-        super().__init__(dimensions=[1, parameters.size])
-
 
 class ScalarEncoder(BaseEncoder):
     """
@@ -189,15 +172,15 @@ class ScalarEncoder(BaseEncoder):
           // last bit in the SDR.
         """
         if not self._periodic:
-            start = min(start, output.size - self._active_bits)
+            start = min(start, output_sdr.size - self._active_bits)
 
-        sparse = output.get_sparse()
+        sparse = output_sdr.get_sparse()
         sparse[:] = list(range(start, start + self._active_bits))
 
         if self._periodic:
             for i, bit in enumerate(sparse):
-                if bit >= output.size:
-                    sparse[i] = bit - output.size
+                if bit >= output_sdr.size:
+                    sparse[i] = bit - output_sdr.size
             sparse.sort()
 
         output_sdr.set_sparse(sparse)
