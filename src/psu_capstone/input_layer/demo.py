@@ -1,13 +1,14 @@
 """Driver code to test InputHandler functionality."""
 
-import psu_capstone.input_layer.InputHandler as ih
-import pathlib as path
-import os
 import datetime as dt
+import os
+import pathlib as path
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
-from typing import Union
+import psu_capstone.input_layer.InputHandler as ih
 
 ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
 
