@@ -14,10 +14,10 @@
 
 import math
 from dataclasses import dataclass
-from typing import Union
+from typing import List, Union
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.encoder_layer.sdr_ import SDR
 
 
 @dataclass
@@ -120,35 +120,27 @@ class ScalarEncoder(BaseEncoder):
      * $ python -m htm.examples.encoders.scalar_encoder --help
      */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters):
-        super().__init__(dimensions=[1, parameters.size])
-
-    __sdr: SDR
-
-    def __new__(cls, parameters: ScalarEncoderParameters, dimensions: List[int]):
-        instance = super(ScalarEncoder, cls).__new__(cls)
-        return instance
-
     def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
         super().__init__(dimensions)
         parameters = self.check_parameters(parameters)
 
-        self.minimum = parameters.minimum
-        self.maximum = parameters.maximum
-        self.clip_input = parameters.clip_input
-        self.periodic = parameters.periodic
-        self.category = parameters.category
-        self.active_bits = parameters.active_bits
-        self.sparsity = parameters.sparsity
-        self._size = parameters.member_size
-        self.radius = parameters.radius
-        self.resolution = parameters.resolution
+        self._minimum = parameters.minimum
+        self._maximum = parameters.maximum
+        self._clip_input = parameters.clip_input
+        self._periodic = parameters.periodic
+        self._category = parameters.category
+        self._active_bits = parameters.active_bits
+        self._sparsity = parameters.sparsity
+        self._size = parameters.size
+        self._radius = parameters.radius
+        self._resolution = parameters.resolution
+        self.__sdr = SDR(self._dimensions)
 
-    def encode(self, input_value: float, output: SDR) -> bool:
-        assert output.size == self.size, "Output SDR size does not match encoder size."
+    def encode(self, input_value: float, output_sdr: SDR) -> bool:
+        assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
-            output.zero()
+            output_sdr.zero()
             return False
 
         elif self._clip_input:
@@ -160,9 +152,9 @@ class ScalarEncoder(BaseEncoder):
                 input_value = max(input_value, self._minimum)
                 input_value = min(input_value, self._maximum)
         else:
-            if self.category and input_value != float(int(input_value)):
+            if self._category and input_value != float(int(input_value)):
                 raise ValueError("Input to category encoder must be an unsigned integer!")
-            if not (self.minimum <= input_value <= self.maximum):
+            if not (self._minimum <= input_value <= self._maximum):
                 raise ValueError(
                     f"Input must be within range [{self._minimum}, {self._maximum}]! "
                     f"Received {input_value}"
@@ -177,22 +169,22 @@ class ScalarEncoder(BaseEncoder):
           // last bit in the SDR.
         """
         if not self._periodic:
-            start = min(start, output.size - self._active_bits)
+            start = min(start, output_sdr.size - self._active_bits)
 
-        sparse = output.get_sparse()
+        sparse = output_sdr.get_sparse()
         sparse[:] = list(range(start, start + self._active_bits))
 
         if self._periodic:
             for i, bit in enumerate(sparse):
-                if bit >= output.size:
-                    sparse[i] = bit - output.size
+                if bit >= output_sdr.size:
+                    sparse[i] = bit - output_sdr.size
             sparse.sort()
 
-        output.set_sparse(sparse)
+        output_sdr.set_sparse(sparse)
 
-        self.__sdr = output
+        self.__sdr = output_sdr
 
-        return self.__sdr == output
+        return self.__sdr == output_sdr
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):

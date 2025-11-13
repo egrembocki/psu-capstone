@@ -3,7 +3,7 @@
 This module mirrors NuPIC's C++ SDR behaviour using idiomatic Python.  It
 exposes the same public surface while providing type aliases, validation
 helpers, and callback hooks that keep dense, sparse, and coordinate caches
-in sync with each other.
+in sync with each other. -- Renamed file
 """
 
 from __future__ import annotations
