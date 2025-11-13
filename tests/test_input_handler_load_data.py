@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from psu_capstone.input_layer.input_handler_stub import InputHandler
+from psu_capstone.input_layer.input_handler import InputHandler
 
 
 @pytest.fixture

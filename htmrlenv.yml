@@ -21,5 +21,6 @@ dependencies:
       - openpyxl
       - mmh3
       - pre-commit
+      - pytest
       
       

@@ -16,8 +16,8 @@ import math
 from dataclasses import dataclass
 from typing import Union
 
-from psu_capstone.encoder_layer.sdr import SDR
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+from psu_capstone.encoder_layer.sdr import SDR
 
 
 @dataclass
@@ -123,23 +123,28 @@ class ScalarEncoder(BaseEncoder):
     def __init__(self, parameters: ScalarEncoderParameters):
         super().__init__(dimensions=[1, parameters.size])
 
+    __sdr: SDR
+
+    def __new__(cls, parameters: ScalarEncoderParameters, dimensions: List[int]):
+        instance = super(ScalarEncoder, cls).__new__(cls)
+        return instance
+
+    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
+        super().__init__(dimensions)
         parameters = self.check_parameters(parameters)
 
-        self._minimum = parameters.minimum
-        self._maximum = parameters.maximum
-        self._clip_input = parameters.clip_input
-        self._periodic = parameters.periodic
-        self._category = parameters.category
-        self._active_bits = parameters.active_bits
-        self._sparsity = parameters.sparsity
-        self._size = parameters.size
-        self._radius = parameters.radius
-        self._resolution = parameters.resolution
+        self.minimum = parameters.minimum
+        self.maximum = parameters.maximum
+        self.clip_input = parameters.clip_input
+        self.periodic = parameters.periodic
+        self.category = parameters.category
+        self.active_bits = parameters.active_bits
+        self.sparsity = parameters.sparsity
+        self._size = parameters.member_size
+        self.radius = parameters.radius
+        self.resolution = parameters.resolution
 
     def encode(self, input_value: float, output: SDR) -> bool:
-        """Encode the input value into the output SDR."""
-
-        # check that output SDR size matches encoder size
         assert output.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
@@ -155,9 +160,9 @@ class ScalarEncoder(BaseEncoder):
                 input_value = max(input_value, self._minimum)
                 input_value = min(input_value, self._maximum)
         else:
-            if self._category and input_value != float(int(input_value)):
+            if self.category and input_value != float(int(input_value)):
                 raise ValueError("Input to category encoder must be an unsigned integer!")
-            if not (self._minimum <= input_value <= self._maximum):
+            if not (self.minimum <= input_value <= self.maximum):
                 raise ValueError(
                     f"Input must be within range [{self._minimum}, {self._maximum}]! "
                     f"Received {input_value}"
@@ -185,9 +190,9 @@ class ScalarEncoder(BaseEncoder):
 
         output.set_sparse(sparse)
 
-        self._sdr = output
+        self.__sdr = output
 
-        return self.sdr == output
+        return self.__sdr == output
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
@@ -266,4 +271,5 @@ class ScalarEncoder(BaseEncoder):
 
         args.sparsity = args.active_bits / float(args.size)
         assert args.sparsity > 0
+
         return args
