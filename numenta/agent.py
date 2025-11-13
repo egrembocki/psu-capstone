@@ -6,11 +6,7 @@ from typing import Any, Dict
 import numpy as np
 from gymnasium import spaces
 from htm import TemporalPooler
-from numenta.frozen_lake import FrozenLakeEnvironment, GymAdapter
-<<<<<<<< HEAD:numenta/agent.py
-========
 from numenta.utils import get_logger
->>>>>>>> origin/main:archive/Project/numenta/agent.py
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -19,13 +15,20 @@ sys.path.append(str(Path(__file__).parents[1]))
 
 
 class Agent:
-<<<<<<<< HEAD:numenta/agent.py
-    def __init__(
-        self, L2: TemporalPooler | None = None, L5: TemporalPooler | None = None
-    ):
-========
     def __init__(self, L2: TemporalPooler | None = None, L5: TemporalPooler | None = None):
->>>>>>>> origin/main:archive/Project/numenta/agent.py
+
+from stable_baselines3 import PPO
+from stable_baselines3.common.evaluation import evaluate_policy
+
+from numenta.frozen_lake import FrozenLakeEnvironment, GymAdapter
+from numenta.utils import get_logger
+
+sys.path.append(str(Path(__file__).parents[1]))
+
+
+class Agent:
+    def __init__(self, L2: TemporalPooler | None = None, L5: TemporalPooler | None = None):
+
         self.sdr_size = 64
         self.cells_per_column = 4
         self.sparsity = 0.1
@@ -50,12 +53,10 @@ class Agent:
             L5
             if L5 is not None
             else TemporalPooler(
-<<<<<<<< HEAD:numenta/agent.py
-                input_space_size=self.sdr_size
-                + self.L2.column_count * self.L2.cells_per_column,
-========
                 input_space_size=self.sdr_size + self.L2.column_count * self.L2.cells_per_column,
->>>>>>>> origin/main:archive/Project/numenta/agent.py
+
+                input_space_size=self.sdr_size + self.L2.column_count * self.L2.cells_per_column,
+
                 column_count=self.sdr_size * 2,
                 cells_per_column=self.cells_per_column,
                 initial_synapses_per_column=12,
@@ -133,9 +134,7 @@ class SDRFrozenLakeEnvironment:
         return np.array(encoded).flatten().tolist()
 
     def reset(self, seed=None):
-        obs, reward, done, truncated, info, surrounding_tiles = self.env.reset(
-            seed=seed
-        )
+        obs, reward, done, truncated, info, surrounding_tiles = self.env.reset(seed=seed)
         obs = self._stimuli_to_obs(obs)
         return obs, reward, done, truncated, info, surrounding_tiles
 

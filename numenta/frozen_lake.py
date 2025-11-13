@@ -4,13 +4,16 @@ from pathlib import Path
 
 import gymnasium as gym
 from gymnasium import spaces
-from numenta.agent import Environment
-<<<<<<<< HEAD:numenta/frozen_lake.py
-========
 from numenta.utils import get_logger
 
 sys.path.append(str(Path(__file__).parents[1]))
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
+
+
+from numenta.agent import Environment
+from numenta.utils import get_logger
+
+sys.path.append(str(Path(__file__).parents[1]))
+
 
 
 class GymAdapter(gym.Env):
@@ -31,9 +34,7 @@ class GymAdapter(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        obs, reward, done, truncated, info, surrounding_tiles = self.core.reset(
-            seed=seed
-        )
+        obs, reward, done, truncated, info, surrounding_tiles = self.core.reset(seed=seed)
         return obs, info
 
     def step(self, action):
@@ -60,21 +61,20 @@ class FrozenLakeEnvironment(Environment):
         # def __init__(self):
         # generating the frozen lake environment
         self.env = gym.make(
-<<<<<<<< HEAD:numenta/frozen_lake.py
-            "FrozenLake-v1",
-            desc=None,
-            map_name="4x4",
-            is_slippery=False,
-            render_mode=render_mode,
-========
             "FrozenLake-v1", desc=None, map_name="4x4", is_slippery=False, render_mode=render_mode
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
         )
 
         self.action_space = self.env.action_space  # action_space attribute
         self.observation_space = (
             self.env.observation_space
         )  # observation_space attribute
+=======
+            "FrozenLake-v1", desc=None, map_name="4x4", is_slippery=False, render_mode=render_mode
+        )
+
+        self.action_space = self.env.action_space  # action_space attribute
+        self.observation_space = self.env.observation_space  # observation_space attribute
+
         self._step_out = None
         self.reset()
         # self.col = 0 #Agents column position
@@ -98,18 +98,10 @@ class FrozenLakeEnvironment(Environment):
         state, reward, done, truncated, info = self.env.step(action if action else 0)  # type: ignore
         self.update_position(state)  # updating the agents position based on the action
         surrounding_tiles = self.get_surrounding_tiles(self.row, self.col)
-<<<<<<<< HEAD:numenta/frozen_lake.py
-        return (
-            state,
-            reward,
-            done,
-            truncated,
-            info,
-            surrounding_tiles,
-        )  # action chosen by the agent
-========
         return state, reward, done, truncated, info, surrounding_tiles  # action chosen by the agent
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
+
+        return state, reward, done, truncated, info, surrounding_tiles  # action chosen by the agent
+
 
     def run_commands(self, motor_commands):
         action = motor_commands["move"]
@@ -153,11 +145,8 @@ class FrozenLakeEnvironment(Environment):
             "current": (row, col),
         }
         for direction, (r, c) in directions.items():
-<<<<<<<< HEAD:numenta/frozen_lake.py
-            surrounding_tiles[direction] = desc[r, c].decode(
-                "utf-8"
-            )  # Decode byte to string
-========
             surrounding_tiles[direction] = desc[r, c].decode("utf-8")  # Decode byte to string
->>>>>>>> origin/main:archive/Project/numenta/frozen_lake.py
+
+            surrounding_tiles[direction] = desc[r, c].decode("utf-8")  # Decode byte to string
+
         return surrounding_tiles

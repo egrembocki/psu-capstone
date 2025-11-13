@@ -7,18 +7,23 @@ help: ## Show this help message
 	@echo ""
 	@echo "Quick start: 'make install'"
 
-install: ## Install package and pre-commit hooks
+ifeq ($(OS),Windows_NT)
+install: ## Install package and pre-commit hooks (Windows)
 	@echo "📦 Installing package in editable mode..."
 	@uv sync --all-groups
-	@if ! git rev-parse --git-dir >/dev/null 2>&1; then \
-		echo "⚠️ Git repository not initialized. Initializing..."; \
-		git init; \
-		git branch -m main; \
-		echo "✅ Git repository initialized with main branch"; \
-	fi
+	@git rev-parse --git-dir >nul 2>&1 || (echo "⚠️ Git repository not initialized. Initializing..." && git init && git branch -m main && echo "✅ Git repository initialized with main branch")
 	@echo "🔧 Setting up pre-commit hooks..."
 	@uv run pre-commit install
 	@echo "✅ Installation complete"
+else
+install: ## Install package and pre-commit hooks (Unix)
+	@echo "📦 Installing package in editable mode..."
+	@uv sync --all-groups
+	@git rev-parse --git-dir >/dev/null 2>&1 || (echo "⚠️ Git repository not initialized. Initializing..." && git init && git branch -m main && echo "✅ Git repository initialized with main branch")
+	@echo "🔧 Setting up pre-commit hooks..."
+	@uv run pre-commit install
+	@echo "✅ Installation complete"
+endif
 
 setup-dev: ## Setup development environment
 	@echo "📚 Installing development dependencies..."
@@ -33,11 +38,11 @@ format: ## Format code with isort and black
 
 lint: ## Run linting checks
 	@echo "🔍 Running linting checks..."
-	# stop the build if there are Python syntax errors or undefined names
 	@uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=$(exclude) -v
-	# exit-zero treats all errors as warnings. The GH editor is 127 chars wide
 	@uv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics --exclude=$(exclude)
 	@echo "✅ Linting complete"
+# stop the build if there are Python syntax errors or undefined names
+# exit-zero treats all errors as warnings. The GH editor is 127 chars wide
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."

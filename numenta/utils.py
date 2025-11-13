@@ -9,10 +9,10 @@ def get_logger(name):
 
 logger = get_logger(__name__)
 
-<<<<<<<< HEAD:numenta/utils.py
-random_name = lambda: randomname.get_name()
-========
 
 def random_name():
     return randomname.get_name()
->>>>>>>> origin/main:archive/Project/numenta/utils.py
+
+
+def random_name():
+    return randomname.get_name()

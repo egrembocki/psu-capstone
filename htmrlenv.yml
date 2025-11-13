@@ -19,4 +19,7 @@ dependencies:
       - black
       - randomname
       - openpyxl
+      - mmh3
+      - pre-commit
+      
       

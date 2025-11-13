@@ -66,7 +66,8 @@ jobs:
         shell: bash
         run: |-
           # Parse the JSON array, sort versions, and get the latest version
-          versions='["3.10", "3.11", "3.12", "3.13"]'
+          # versions='["3.10", "3.11", "3.12", "3.13"]'
+          versions='["3.12"]'
           latest=$(echo "$versions" | jq -r '.[]' | sort -V | tail -n 1)
           echo "latest-version=${latest}" >> $GITHUB_OUTPUT
           echo "Latest Python version is $latest"
@@ -83,7 +84,7 @@ jobs:
     strategy:
       matrix:
         # python-version: ${{ fromJSON(github.event.inputs.python_versions) }}
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.12"]
       fail-fast: true
   
     steps:
