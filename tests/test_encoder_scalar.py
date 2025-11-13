@@ -13,6 +13,7 @@ looger.basicConfig(level=looger.INFO)
 @pytest.fixture
 def scalar_encoder_instance():
     """Fixture to create a ScalarEncoder instance for testing. This may change when we get Union working properly."""
+    # Arrange
 
 
 # Helper
