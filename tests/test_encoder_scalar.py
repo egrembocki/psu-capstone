@@ -1,6 +1,7 @@
 """Test suite for the SDR Encoder-Scalar."""
 
 import pytest
+
 from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
 
@@ -55,14 +56,14 @@ def test_clipping_inputs():
         category=False,
         active_bits=2,
         sparsity=0.0,
-        size= 10,
+        size=10,
         radius=0.0,
         resolution=0.0,
         size_or_radius_or_category_or_resolution=0,
-        active_bits_or_sparsity=0
+        active_bits_or_sparsity=0,
     )
     # Act and Assert baseline
-    encoder = ScalarEncoder(p, dimensions = [2, 5])
+    encoder = ScalarEncoder(p, dimensions=[2, 5])
     test_sdr = SDR([2, 5])
     test_sdr.zero()
 
@@ -89,7 +90,6 @@ def test_valid_scalar_inputs():
         active_bits=2,
         minimum=10,
         maximum=20,
-        # Other parameters can be default or arbitrary
         sparsity=0.0,
         radius=0.0,
         category=False,
@@ -124,7 +124,6 @@ def test_scalar_encoder_category_encode():
         sparsity=0.02,
         minimum=0,
         maximum=65,
-        # Other parameters can be default or arbitrary
         active_bits=0,
         radius=0.0,
         category=False,

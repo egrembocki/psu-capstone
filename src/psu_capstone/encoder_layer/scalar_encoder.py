@@ -136,13 +136,15 @@ class ScalarEncoder(BaseEncoder):
         self._size = parameters.size
         self._radius = parameters.radius
         self._resolution = parameters.resolution
-    '''
+
+    """
         Encodes an input value into an SDR with a block of 1's.
 
         Description:
         The encode method is responsible for transforming the supplied SDR data structure into
         an SDR that has the encoding of the input value.
-    '''
+    """
+
     def encode(self, input_value: float, output_sdr: SDR) -> bool:
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
@@ -195,15 +197,15 @@ class ScalarEncoder(BaseEncoder):
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
-        '''
-            Check parameters method is used to verify that the correct parameters were entered
-            and reject the user when they are not.
+        """
+        Check parameters method is used to verify that the correct parameters were entered
+        and reject the user when they are not.
 
-            Description: This changes and transforms the input that the user has with the parameters
-            dataclass. There are many aspects such as the active bit and sparsity being mutually exclusive
-            and the size, radius, resolution, and category also being muturally exclusive with each other.
-            The user will have an assert that rejects when these are violated.
-        '''
+        Description: This changes and transforms the input that the user has with the parameters
+        dataclass. There are many aspects such as the active bit and sparsity being mutually exclusive
+        and the size, radius, resolution, and category also being muturally exclusive with each other.
+        The user will have an assert that rejects when these are violated.
+        """
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([parameters.active_bits > 0, parameters.sparsity > 0])
         assert num_active_args != 0, "Missing argument, need one of: 'active_bits', 'sparsity'."
@@ -211,7 +213,9 @@ class ScalarEncoder(BaseEncoder):
         print(str(parameters.active_bits))
         assert (
             num_active_args == 1
-        ), "Specified both: 'active_bits', 'sparsity'. Specify only one of them." + str(num_active_args)
+        ), "Specified both: 'active_bits', 'sparsity'. Specify only one of them." + str(
+            num_active_args
+        )
         num_size_args = sum(
             [
                 parameters.size > 0,
@@ -223,9 +227,18 @@ class ScalarEncoder(BaseEncoder):
         assert (
             num_size_args != 0
         ), "Missing argument, need one of: 'size', 'radius', 'resolution', 'category'."
-        assert (
-            num_size_args == 1
-        ), "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them." + str(num_size_args)+ "     " + str(parameters.size)+ "     " + str(parameters.radius) + "      " + str(parameters.category)+ "     " + str(parameters.resolution)
+        assert num_size_args == 1, (
+            "Too many arguments specified: 'size', 'radius', 'resolution', 'category'. Choose only one of them."
+            + str(num_size_args)
+            + "     "
+            + str(parameters.size)
+            + "     "
+            + str(parameters.radius)
+            + "      "
+            + str(parameters.category)
+            + "     "
+            + str(parameters.resolution)
+        )
         if parameters.periodic:
             assert (
                 not parameters.clip_input
@@ -284,7 +297,8 @@ class ScalarEncoder(BaseEncoder):
 
         return args
 
-'''p = ScalarEncoderParameters(
+
+"""p = ScalarEncoderParameters(
         minimum=10.0,
         maximum=20.0,
         clip_input=False,
@@ -305,4 +319,4 @@ encoder3.encode(20.0, output)
 print(output)
 #encoder3.encode(9.9, output) ValueError
 #encoder3.encode(20.1, output) ValueError
-print(output)'''
+print(output)"""
