@@ -36,7 +36,7 @@ def test_scalar_encoder_initialization():
     )
 
     # Act
-    encoder = ScalarEncoder(parameters)
+    encoder = ScalarEncoder(parameters, [1, 10])
 
     # Assert
     assert isinstance(encoder, ScalarEncoder)
@@ -67,8 +67,8 @@ def test_clipping_inputs():
     )
 
     # Act and Assert baseline
-    encoder = ScalarEncoder(parameters)
-    test_sdr = SDR([10])
+    encoder = ScalarEncoder(parameters, [2, 5])
+    test_sdr = SDR([2, 5])
     test_sdr.zero()
 
     assert encoder.size == 10
@@ -108,10 +108,10 @@ def test_valid_scalar_inputs():
     )
 
     # Act and Assert - baseline
-    encoder = ScalarEncoder(params)
-    test_sdr = SDR([10])
+    encoder = ScalarEncoder(params, [2, 5])
+    test_sdr = SDR([2, 5])
     assert encoder.size == 10
-    assert encoder.dimensions == [10]
+    assert encoder.dimensions == [2, 5]
     assert test_sdr.size == 10
     assert test_sdr.get_sparse() == []
 
@@ -143,7 +143,7 @@ def test_scalar_encoder_category_encode():
     )
 
     # Act and Assert - baseline
-    encoder = ScalarEncoder(params)
+    encoder = ScalarEncoder(params, [66])
     output = SDR([66])
     assert encoder.size == 66
     assert encoder.dimensions == [66]
@@ -179,7 +179,7 @@ def test_scalar_encoder_non_integer_bucket_width():
         active_bits_or_sparsity=0,
     )
 
-    encoder = ScalarEncoder(params)
+    encoder = ScalarEncoder(params, [1, 7])
 
     cases = [
         (10.0, [0, 1, 2]),
@@ -209,7 +209,7 @@ def test_scalar_encoder_round_to_nearest_multiple_of_resolution():
     )
 
     # Act and Assert - baseline
-    encoder = ScalarEncoder(params)
+    encoder = ScalarEncoder(params, [1, 13])
     assert encoder.size == 13
     assert encoder.dimensions == [13]
 
@@ -249,12 +249,11 @@ def test_scalar_encoder_periodic_round_nearest_multiple_of_resolution():
         size_or_radius_or_category_or_resolution=0,
         active_bits_or_sparsity=0,
     )
-    encoder = ScalarEncoder(params)
+    encoder = ScalarEncoder(params, [1, 10])
 
     # Act and Assert - baseline
     assert encoder.size == 10
-    assert encoder.dimensions == [10]
-
+    assert encoder.dimensions == [1, 10]
     cases = [
         (10.00, [0, 1, 2]),
         (10.49, [0, 1, 2]),
@@ -297,18 +296,17 @@ def test_scalar_encoder_serialization():
         size_or_radius_or_category_or_resolution=0,
         active_bits_or_sparsity=0,
     )
-    inputs.append(ScalarEncoder(p))
+    inputs.append(ScalarEncoder(p, [1, 34]))
 
     p.clip_input = True
-    inputs.append(ScalarEncoder(p))
+    inputs.append(ScalarEncoder(p, [1, 34]))
 
     p.clip_input = False
     p.periodic = True
-    inputs.append(ScalarEncoder(p))
-
+    inputs.append(ScalarEncoder(p, [1, 34]))
     p.radius = 0.0
     p.resolution = 0.1337
-    inputs.append(ScalarEncoder(p))
+    inputs.append(ScalarEncoder(p, [1, 34]))
 
     q = ScalarEncoderParameters(
         minimum=-1.234,
@@ -329,7 +327,7 @@ def test_scalar_encoder_serialization():
     q.maximum = 1.0003
     q.size = 100
     q.sparsity = 0.15
-    inputs.append(ScalarEncoder(q))
+    inputs.append(ScalarEncoder(q, [1, 100]))
 
     r = ScalarEncoderParameters(
         minimum=-1.234,
@@ -349,7 +347,7 @@ def test_scalar_encoder_serialization():
     r.maximum = 65
     r.size = 700
     r.sparsity = 0.02
-    inputs.append(ScalarEncoder(r))
+    inputs.append(ScalarEncoder(r, [1, 700]))
 
     for encoder in inputs:
         # Serialize to JSON string
