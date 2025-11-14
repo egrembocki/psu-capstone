@@ -1,177 +1,122 @@
-# SWENG480
-Capstone Project
+# PSU Capstone Project
 
-## Environment Setup (Conda)
+## 1. Environment Setup: Conda & VM
 
-This project now uses a named Conda environment (`rl_env`) instead of a path `prefix` environment. This simplifies activation and avoids path portability issues on different machines.
+This project uses Conda environments for reproducibility. You can use a local machine, VM, or container.
 
-### 1. Install Miniconda (Recommended)
-Download from: https://docs.conda.io/en/latest/miniconda.html (Windows 64-bit, Python 3.11) or use winget (Windows PowerShell):
+### a. Install Miniconda
+- Download Miniconda: https://docs.conda.io/en/latest/miniconda.html
+- Linux/MacOS: Follow site instructions, then run `conda init bash`
+- Windows: Use PowerShell
+  ```powershell
+  winget install -e --id Anaconda.Miniconda3
+  conda init powershell
+  ```
+- Restart your terminal and verify:
+  ```bash
+  conda --version
+  ```
 
-```powershell
-winget install -e --id Anaconda.Miniconda3
-```
+### b. Create & Activate Environment
+- From the project root:
+  ```bash
+  conda env create -f htmrlenv.yml
+  conda activate htmrl_env
+  ```
+  *(Replace `htmrl_env` with the name in your YAML if different)*
 
-Initialize Conda for PowerShell:
-
-```powershell
-conda init powershell
-```
-Close and reopen the terminal (or run a new VS Code terminal). Verify:
-
-```powershell
-conda --version
-```
-
-### 2. Create the Environment (Reinforcement Learning stack)
-
-From the project root (`SWENG480/`), using the updated `environment-tensorflow.yml` (named env):
-
-```powershell
-conda env create -f environment-tensorflow.yml
-```
-
-### 3. Activate the Environment
-
-```powershell
-conda activate rl_env
-```
-
-### 4. Verify Core Packages
-
-```powershell
-python -c "import torch, tensorflow, gymnasium, pandas; print('OK')"
-```
-
-### 5. Updating the Environment
-
-After editing `environment-tensorflow.yml` (adding/removing dependencies):
-```powershell
-conda env update -f environment-tensorflow.yml --prune
-```
-
-### 6. Jupyter Kernel (Optional)
-
-```powershell
-python -m ipykernel install --user --name rl_env --display-name "RL Env"
-```
+### c. VM Setup
+- Provision a VM with your preferred OS (Linux recommended)
+- Install Miniconda as above
+- Clone this repo and follow the environment steps
 
 ---
 
-## Training & Running the CartPole Policy Gradient
+## 2. Makefile: Installation & Usage
 
-Main training script: `src/test/cartPole.py`
+### a. What is Make?
+Make automates development tasks using a `Makefile`.
 
-CLI arguments:
-```
---iterations             Number of policy update iterations (default 200)
---episodes-per-update    Episodes collected per iteration (default 5)
---max-steps              Max steps per episode (default 200)
---discount               Discount factor gamma (default 0.95)
---no-render              Disable environment rendering window
---save-name              Output model filename inside models/ (default cartpole_policy.keras)
---load-model             Path to existing .keras model to resume training
-```
+### b. Install Make
+- **Linux (Debian/Ubuntu):**
+  ```bash
+  sudo apt-get update
+  sudo apt-get install build-essential
+  ```
+- **MacOS:**
+  ```bash
+  xcode-select --install
+  ```
+- **Windows:**
+  - Recommended: [Install WSL](https://docs.microsoft.com/en-us/windows/wsl/install)
+  - Or, install [Git Bash](https://gitforwindows.org/) or [Chocolatey](https://chocolatey.org/):
+    ```powershell
+    choco install make
+    ```
 
-### Example Commands
-
-Basic training with rendering:
-```powershell
-python .\src\test\cartPole.py
-```
-
-Headless (faster) short run:
-```powershell
-python .\src\test\cartPole.py --iterations 20 --episodes-per-update 10 --no-render --save-name run1.keras
-```
-
-Resume training from a saved model:
-```powershell
-python .\src\test\cartPole.py --load-model models\run1.keras --iterations 50 --no-render --save-name run1_cont.keras
-```
-
-Minimal smoke test:
-```powershell
-python .\src\test\cartPole.py --iterations 1 --episodes-per-update 1 --no-render --save-name quick.keras
-```
-
-### Early Stopping
-Training stops early if mean episode length ≥ 200 for 2 consecutive iterations (CartPole “solved” criterion). This logic is inside `train()`.
+### c. Makefile Dependencies
+- `uv` (Python package manager):
+  ```bash
+  pip install uv
+  ```
+- `pre-commit`, `isort`, `black`, `flake8`, `pytest` (installed via `uv` or pip)
 
 ---
 
-## Saved Models
+## 3. Using the Makefile
 
-Saved models are written to `models/` in Keras `.keras` format (architecture + weights + optimizer state). Example load:
-
-```python
-from tensorflow import keras
-model = keras.models.load_model("models/cartpole_policy.keras")
-proba_left = model([[0.0, 0.1, 0.0, -0.05]])
-print(float(proba_left.numpy()[0][0]))
+From the project root, run:
+```bash
+make <target>
 ```
+Common targets:
+- `make help`        # List all commands
+- `make install`     # Install package and pre-commit hooks
+- `make setup-dev`   # Install dev dependencies
+- `make format`      # Format code
+- `make lint`        # Lint code
+- `make test`        # Run tests
+- `make clean`       # Remove build/test artifacts
+- `make update`      # Update dependencies
+- `make pre-commit`  # Run pre-commit hooks
 
 ---
 
-## Troubleshooting
+## 4. Troubleshooting
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `conda` not recognized | Shell not initialized | `conda init powershell` then new terminal |
-| Long solve time | Heavy TF+Torch combo | Try creating env without one first, then `pip install` the other |
-| Render window slow | Human rendering each step | Use `--no-render` while training |
-| No GPU usage | CPU build installed | Install GPU builds (PyTorch via official index URL, ensure CUDA drivers) |
-| Model not improving | High variance PG | Increase episodes per update or add baseline (future enhancement) |
-
-### Clean Recreate
-```powershell
-conda deactivate
-conda remove -n rl_env --all
-conda env create -f environment-tensorflow.yml
-conda activate rl_env
-```
+| Issue                  | Cause                        | Fix                                                      |
+|------------------------|------------------------------|-----------------------------------------------------------|
+| `conda` not recognized | Shell not initialized        | `conda init <shell>` then open a new terminal             |
+| Make not found         | Not installed                | See install instructions above                            |
+| `uv` not found         | Not installed                | `pip install uv`                                         |
+| Pre-commit fails       | Missing dependencies         | Run `make install` and `make setup-dev`                   |
+| Python package errors  | Wrong env active             | `conda activate htmrl_env`                                |
 
 ---
 
-## Additional Optional Environment
+## 5. Git Workflow: Commit, Hooks, Sync
 
-We provide one optional environment for modern HTM experiments:
-
-| Env | YAML File | Python | Purpose |
-|-----|-----------|--------|---------|
-| rl_env | environment-tensorflow.yml | 3.11 | Main RL + TensorFlow / Torch experimentation |
-| htmcore | environment-htmcore.yml | 3.10 | Modern maintained HTM (htm.core) |
-
-Create & activate example:
-```powershell
-conda env create -f environment-htmcore.yml
-conda activate htmcore
-python -c "import htm; print('htm.core version:', htm.__version__)"
-```
-
----
-
-## Optional Improvements (Not Yet Implemented)
-* Baseline / advantage normalization
-* TensorBoard logging
-* Checkpoint best model
-* Seed reproducibility utilities
+1. **Stage changes:**
+   ```bash
+   git add .
+   ```
+2. **Commit:**
+   ```bash
+   git commit -m "Your message"
+   ```
+   - If pre-commit hooks fail, fix issues, re-stage (`git add .`), and re-run `git commit`.
+3. **Sync with remote:**
+   ```bash
+   git pull --rebase   # Get latest changes
+   git push            # Push your commit
+   ```
 
 ---
 
-## At a Glance
-
-```powershell
-# Create main RL env
-conda env create -f environment-tensorflow.yml
-conda activate rl_env
-
-# Train
-python .\src\test\cartPole.py --no-render --iterations 50
-
-# Resume later
-python .\src\test\cartPole.py --load-model models\cartpole_policy.keras --iterations 25 --no-render
-```
+## 6. Additional Notes
+- For more info on Makefile targets, run `make help`.
+- For environment issues, recreate with `conda env remove -n htmrl_env --all` then re-create.
+- For VM/container, ensure ports and file permissions are set as needed.
 
 ---
 
