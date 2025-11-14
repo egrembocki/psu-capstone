@@ -7,7 +7,7 @@
  *      resolution.
  *
  * These are mutually exclusive and only one of them should be non-zero when
- * constructing the encoder.
+ * constructing the encoder. -- Need to refactor ScalarEncoder to take in only params
  */
 
 """
