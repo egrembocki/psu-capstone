@@ -1,10 +1,15 @@
+"""InputHandler singleton to pass a Data object to the Encoder layer.
+Implemented as a singleton  layer handler for now, with methods to convert raw data to
+DataFrame, sequence, etc.
+TODO : make a logger class to log messages instead of print statements.
+"""
+
+import datetime
 import os
 from typing import Union
 
 import numpy as np
 import pandas as pd
-
-"""InputHandler singleton to pass a Data object to the Encoder layer. Implemented as a singleton layer handler for now, with methods to convert raw data to DataFrame, sequence, etc."""
 
 
 class InputHandler:
@@ -14,27 +19,41 @@ class InputHandler:
     """
 
     _instance = None
-    """The single instance of the InputHandler class."""
 
-    _data: Union[pd.DataFrame, list] = pd.DataFrame()
-    """The input data of any type."""
+    def __new__(cls) -> "InputHandler":
+        """Constructor -- Singleton pattern implementation."""
 
-    _hyperparameters: dict = {}
-    """The hyperparameters associated with the input data."""
+        if cls._instance is None:
+            cls._instance = super(InputHandler, cls).__new__(cls)
+
+        return cls._instance
+
+    def __init__(self):
+        """Initialize the InputHandler singleton."""
+
+        self._instance = None
+        """The singleton instance."""
+
+        self._data = pd.DataFrame()
+        """The input data of any type."""
 
     # Getters, maybe use properties later
-    def get_data(self) -> Union[pd.DataFrame, list]:
+    def get_data(self) -> pd.DataFrame:
         """Getter for the data attribute"""
-        return self._data
-
-    def get_hyperparameters(self) -> dict:
-        """Getter for the hyperparameters attribute"""
-        return self._hyperparameters
+        return pd.DataFrame(self._data)
 
     # main methods to handle input data processing
 
     def load_data(self, filepath: str) -> pd.DataFrame:
-        """Load data from a file with padas based on file extension. This will automatically create a dataframe."""
+        """Load data from a file with padas based on file extension.
+        This will automatically create a dataframe."""
+
+        assert os.path.exists(filepath), f"The file {filepath} does not exist."
+        assert isinstance(filepath, str), "Filepath must be a string."
+        assert len(filepath) > 0, "Filepath cannot be empty."
+        assert isinstance(
+            self, InputHandler
+        ), "load_data must be called on an InputHandler instance."
 
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"The file {filepath} does not exist.")
@@ -62,46 +81,79 @@ class InputHandler:
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
-    def to_dataframe(self, data: Union[pd.DataFrame, list]) -> pd.DataFrame:
+    def to_dataframe(self, data: Union[pd.DataFrame, list, bytearray, np.ndarray]) -> pd.DataFrame:
         """Explicitly convert input data to a pandas DataFrame"""
 
-        # Placeholder implementation; actual conversion logic will depend on data type
-        # the main goal is to get the dataset to list first for easy pandas conversion to DataFrame
+        assert isinstance(
+            data, (pd.DataFrame, list, bytearray, np.ndarray)
+        ), "Data must be a DataFrame, list, bytearray, or numpy ndarray."
+        temp_data: pd.DataFrame
 
         if isinstance(data, pd.DataFrame):
             print("Data is already a DataFrame.")
-            return data
+            temp_data = data
         elif isinstance(data, list):
             print("Converting data to DataFrame.")
-
-            return pd.DataFrame(data)
+            temp_data = pd.DataFrame(data)
+        elif isinstance(data, bytearray):
+            print("Converting bytearray to DataFrame.")
+            temp_data = pd.DataFrame(list(data))
+        elif isinstance(data, np.ndarray):
+            print("Converting numpy array to DataFrame.")
+            temp_data = pd.DataFrame(data)
         else:
             raise TypeError("Unsupported data type for conversion to DataFrame.")
+        self._fill_missing_values(temp_data)
+        return temp_data
 
-    def raw_to_sequence(self) -> list:
-        """Convert raw data to sequence (list)"""
+    def raw_to_sequence(self, data: Union[list, bytearray, bytes, np.ndarray, str]) -> list:
+        """Convert raw data to a normalized sequence list with guaranteed date metadata."""
 
-        # Placeholder implementation; actual conversion logic will depend on data type
-        # could be list, numpy array, pandas series, etc.
-
-        if isinstance(self._data, list):
-            return self._data
+        assert isinstance(
+            data, (list, bytearray, bytes, np.ndarray, str)
+        ), "Data must be a list, bytearray, bytes, numpy ndarray, or string."
+        if isinstance(data, np.ndarray):
+            iterable = data.tolist()
+        elif isinstance(data, (bytearray, bytes)):
+            iterable = list(data)
+        elif isinstance(data, list):
+            iterable = data[:]
+        elif isinstance(data, str):
+            iterable = [data]
         else:
-            # simple conversion to list, more logic is needed based on what the data is
-            return [self._data]
+            raise TypeError("Unsupported data type for conversion to sequence.")
 
-    # validation methods
+        sequence: list = []
+        contains_date = False
 
-    def validate_data(self) -> bool:
-        """Validate the input data"""
+        for item in iterable:
+            normalized, is_date = self._normalize_datetime_entry(item)
+            sequence.append(normalized)
+            if is_date:
+                contains_date = True
 
-        # Placeholder implementation; actual validation logic will depend on data type and requirements
+        if not contains_date:
+            sequence.insert(0, datetime.datetime.now().isoformat())
 
-        is_valid = isinstance(self._data, (pd.DataFrame, list, np.ndarray, pd.Series, dict, str))
+        return sequence
 
-        return is_valid
+    def _normalize_datetime_entry(self, value: object) -> tuple[object, bool]:
+        """Normalize datetime-like values to ISO strings and report detection."""
+        if isinstance(value, datetime.datetime):
+            return value.isoformat(), True
+        if isinstance(value, datetime.date):
+            return datetime.datetime.combine(value, datetime.time()).isoformat(), True
+        if isinstance(value, pd.Timestamp):
+            return value.to_pydatetime().isoformat(), True
+        if isinstance(value, str):
+            try:
+                parsed = datetime.datetime.fromisoformat(value)
+                return parsed.isoformat(), True
+            except ValueError:
+                return value, False
+        return value, False
 
-    def fill_missing_values(self, data: pd.DataFrame) -> None:
+    def _fill_missing_values(self, data: pd.DataFrame) -> None:
         """Fill missing values in the input data"""
 
         # Placeholder implementation; actual logic will depend on data type and requirements
@@ -111,10 +163,13 @@ class InputHandler:
 
         # Add more cases as needed for different data types
 
-    def __new__(cls, *args, **kwargs):
-        """Constructor -- Singleton pattern implementation."""
+    # validation methods
 
-        if cls._instance is None:
-            cls._instance = super(InputHandler, cls).__new__(cls)
+    def validate_data(self) -> bool:
+        """Validate the input data"""
 
-        return cls._instance
+        assert isinstance(self._data, pd.DataFrame), "Data is not a DataFrame."
+        if self._data.empty:
+            print("DataFrame is empty.")
+            return False
+        return True  # Data is valid if not empty

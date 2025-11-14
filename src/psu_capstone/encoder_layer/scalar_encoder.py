@@ -14,10 +14,11 @@
 
 import math
 from dataclasses import dataclass
-from typing import Union
+from typing import List
 
-from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from psu_capstone.encoder_layer.sdr import SDR
+import numpy as np
+from SDR import SDR
+from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
 
 
 @dataclass
@@ -93,58 +94,31 @@ class ScalarEncoderParameters:
      */
     """
     resolution: float
-    """The smallest difference between two inputs that produces different outputs.
-      /**
-     * Member "resolution" Two inputs separated by greater than, or equal to the
-     * resolution are guaranteed to have different representations.
-     */"""
-
-    size_or_radius_or_category_or_resolution: Union[int, float, bool]
-    """Helper field to indicate which of size, radius, category, or resolution is specified."""
-
-    active_bits_or_sparsity: Union[int, float]
-    """Helper field to indicate which of active_bits or sparsity is specified."""
 
 
 class ScalarEncoder(BaseEncoder):
-    """
-    /**
-     * Encodes a real number as a contiguous block of 1's.
-     *
-     * Description:
-     * The ScalarEncoder encodes a numeric (floating point) value into an array
-     * of bits. The output is 0's except for a contiguous block of 1's. The
-     * location of this contiguous block varies continuously with the input value.
-     *
-     * To inspect this run:
-     * $ python -m htm.examples.encoders.scalar_encoder --help
-     */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters):
-        super().__init__(dimensions=[1, parameters.size])
-
+    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
+        super().__init__(dimensions)
         parameters = self.check_parameters(parameters)
 
-        self._minimum = parameters.minimum
-        self._maximum = parameters.maximum
-        self._clip_input = parameters.clip_input
-        self._periodic = parameters.periodic
-        self._category = parameters.category
-        self._active_bits = parameters.active_bits
-        self._sparsity = parameters.sparsity
-        self._size = parameters.size
-        self._radius = parameters.radius
-        self._resolution = parameters.resolution
+        self.minimum = parameters.minimum
+        self.maximum = parameters.maximum
+        self.clip_input = parameters.clip_input
+        self.periodic = parameters.periodic
+        self.category = parameters.category
+        self.active_bits = parameters.active_bits
+        self.sparsity = parameters.sparsity
+        self._size = parameters.member_size
+        self.radius = parameters.radius
+        self.resolution = parameters.resolution
 
-    def encode(self, input_value: float, output: SDR) -> bool:
-        """Encode the input value into the output SDR."""
-
-        # check that output SDR size matches encoder size
+    def encode(self, input_value: float, output: SDR) -> None:
         assert output.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
             output.zero()
-            return False
+            return
 
         elif self._clip_input:
             if self._periodic:
@@ -165,29 +139,16 @@ class ScalarEncoder(BaseEncoder):
 
         start = int(round((input_value - self._minimum) / self._resolution))
 
-        """Handle edge case where start + active_bits exceeds output size.
-          // The endpoints of the input range are inclusive, which means that the
-          // maximum value may round up to an index which is outside of the SDR. Correct
-          // this by pushing the endpoint (and everything which rounds to it) onto the
-          // last bit in the SDR.
-        """
-        if not self._periodic:
-            start = min(start, output.size - self._active_bits)
+        if not self.periodic:
+            start = min(start, output.size - self.active_bits)
 
-        sparse = output.get_sparse()
-        sparse[:] = list(range(start, start + self._active_bits))
+        sparse = list(range(start, start + self.active_bits))
 
-        if self._periodic:
-            for i, bit in enumerate(sparse):
-                if bit >= output.size:
-                    sparse[i] = bit - output.size
+        if self.periodic:
+            sparse = [bit % output.size for bit in sparse]
             sparse.sort()
 
-        output.set_sparse(sparse)
-
-        self._sdr = output
-
-        return self.sdr == output
+        output.setSparse(sparse)
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
@@ -266,4 +227,5 @@ class ScalarEncoder(BaseEncoder):
 
         args.sparsity = args.active_bits / float(args.size)
         assert args.sparsity > 0
+
         return args

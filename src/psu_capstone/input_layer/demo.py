@@ -8,7 +8,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-import psu_capstone.input_layer.InputHandler as ih
+import psu_capstone.input_layer.input_handler as ih
 
 ROOT_PATH = path.Path(__file__).parent.parent.parent.parent
 
