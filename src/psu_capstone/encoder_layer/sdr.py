@@ -467,7 +467,7 @@ class SDR:
 
         self.set_dense_inplace()
 
-    def concatenate(self, inputs: List["SDR"], axis: int) -> None:
+    def concatenate(self, inputs: List["SDR"], axis: int = 0) -> None:
         """Concatenate SDRs along a chosen axis, writing the dense result into this instance.
 
         Args:
