@@ -43,6 +43,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pytest.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -146,7 +147,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+#.env
 .envrc
 .venv
 env/
@@ -156,7 +157,7 @@ env.bak/
 venv.bak/
 .vscode
 .requirements.txt
-.flake8
+#.flake8
 htmrlenv/
 
 
