@@ -7,6 +7,7 @@ extend-ignore =
 
 exclude =
     .venv,
+    .vscode,
     __pycache__,
     .pytest_cache,
     build,
@@ -14,8 +15,8 @@ exclude =
     archive,
     data,
     .github,
-    scrpts,
-    SDR_Encoder_Temp,
+    scripts,
+   
 
     
     
