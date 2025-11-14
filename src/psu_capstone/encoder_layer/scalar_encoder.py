@@ -16,8 +16,8 @@ import math
 from dataclasses import dataclass
 from typing import Union
 
-from psu_capstone.encoder_layer.sdr import SDR
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+from psu_capstone.encoder_layer.sdr import SDR
 
 
 @dataclass

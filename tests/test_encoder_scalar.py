@@ -99,7 +99,7 @@ def test_clipping_inputs():
 
     assert encoder.size == 10
     assert encoder.dimensions == [1, 10]
-    assert test_sdr._size == 10
+    assert test_sdr.size == 10
 
     # Act and Asset - Test input clipping
     # These should pass without exceptions
@@ -138,7 +138,7 @@ def test_valid_scalar_inputs():
     test_sdr = SDR([10])
     assert encoder.size == 10
     assert encoder.dimensions == [10]
-    assert test_sdr._size == 10
+    assert test_sdr.size == 10
     assert test_sdr.get_sparse() == []
 
     with pytest.raises(Exception):
@@ -173,7 +173,7 @@ def test_scalar_encoder_category_encode():
     output = SDR([66])
     assert encoder.size == 66
     assert encoder.dimensions == [66]
-    assert output._size == 66
+    assert output.size == 66
 
     # Act and Assert - Value less than minimum should raise
     with pytest.raises(Exception):
