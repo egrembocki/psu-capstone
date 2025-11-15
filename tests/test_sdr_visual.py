@@ -16,6 +16,7 @@ def sdr_visualization(debug=False):
     pass  # No setup needed for this simple visualization test
 
 
+@pytest.mark.visual
 def test_sdr_visualization(sdr_visualization):
     """Test the visualization of an SDR."""
 
@@ -48,6 +49,7 @@ def test_sdr_visualization(sdr_visualization):
     plt.show(block=True)
 
 
+@pytest.mark.visual
 def test_sdr_one_row_visual():
     """Test visualization of a single row SDR."""
     # Arrange
@@ -68,5 +70,73 @@ def test_sdr_one_row_visual():
     plt.show()
 
 
+@pytest.mark.visual
 def test_sdr_union_visual():
-    """Visualize multiple SDRs as a stacked view."""
+    print(">> running test_sdr_union_layout_visual")  # sanity check
+
+    rows, cols = 20, 50  # size of each small SDR grid
+
+    # --- Create three SDRs (each 16x16) ---
+    sdr1 = SDR([rows, cols])
+    sdr1.randomize(0.02)
+
+    sdr1.set_sparse_inplace()
+
+    sdr2 = SDR([rows, cols])
+    sdr2.randomize(0.05)
+
+    sdr2.set_sparse_inplace()
+
+    sdr3 = SDR([rows, cols])
+    sdr3.randomize(0.03)
+
+    sdr3.set_sparse_inplace()
+
+    # --- Union SDR big enough to hold all three stacked vertically ---
+    # shape: (rows * 3, cols)
+    sdr_union = SDR([rows * 3, cols])
+    sdr_union.concatenate([sdr1, sdr2, sdr3], axis=0)
+
+    # --- Convert SDRs to 2D dense numpy arrays ---
+    grid1 = np.array(sdr1.get_dense(), dtype=int).reshape(rows, cols)
+    grid2 = np.array(sdr2.get_dense(), dtype=int).reshape(rows, cols)
+    grid3 = np.array(sdr3.get_dense(), dtype=int).reshape(rows, cols)
+
+    union_grid = np.array(sdr_union.get_dense(), dtype=int).reshape(rows * 3, cols)
+
+    # --- Colormap: 0 -> white, 1 -> blue ---
+    cmap = ListedColormap(["white", "#1f77b4"])
+
+    # --- Figure layout that matches your screenshot ---
+    fig = plt.figure(figsize=(10, 10))
+    gs = fig.add_gridspec(2, 3, height_ratios=[3, 2])
+
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax_union = fig.add_subplot(gs[1, 0])
+
+    ax1.imshow(grid1, cmap=cmap, interpolation="nearest")
+    ax1.set_title("SDR One")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
+    ax2.imshow(grid2, cmap=cmap, interpolation="nearest")
+    ax2.set_title("SDR Two")
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+
+    ax3.imshow(grid3, cmap=cmap, interpolation="nearest")
+    ax3.set_title("SDR Three")
+    ax3.set_xticks([])
+    ax3.set_yticks([])
+
+    ax_union.imshow(union_grid, cmap=cmap, interpolation="nearest", aspect="auto")
+    ax_union.set_title("Union")
+    ax_union.set_xticks([])
+    ax_union.set_yticks([])
+
+    plt.tight_layout()
+    plt.show(block=True)
+
+    print(">> finished test_sdr_union_layout_visual")
