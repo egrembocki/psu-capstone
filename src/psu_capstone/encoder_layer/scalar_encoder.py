@@ -105,9 +105,6 @@ class ScalarEncoderParameters:
     active_bits_or_sparsity: Union[int, float]
     """Helper field to indicate which of active_bits or sparsity is specified."""
 
-    size_or_radius_or_category_or_resolution: Union[int, float, bool]
-    """Helper field to indicate which of size, radius, category, or resolution is specified."""
-
 
 class ScalarEncoder(BaseEncoder):
     """
