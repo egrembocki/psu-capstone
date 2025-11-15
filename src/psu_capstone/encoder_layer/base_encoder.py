@@ -63,3 +63,7 @@ class BaseEncoder(ABC):
     @abstractmethod
     def encode(self, input_value: float, output_sdr: SDR) -> bool:
         raise NotImplementedError("Subclasses must implement this method")
+
+    # @abstractmethod
+    # def set_parameters(self, parameters) -> bool:
+    #    raise NotImplementedError("Subclasses must implement this method")

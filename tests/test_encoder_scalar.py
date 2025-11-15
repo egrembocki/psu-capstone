@@ -11,7 +11,7 @@ def scalar_encoder_instance():
     """Fixture to create a ScalarEncoder instance for testing. This may change when we get Union working properly."""
 
 
-# Helper
+# Helper -- may need to be implemented later
 def do_scalar_value_cases(encoder: ScalarEncoder, cases):
     pass
 
@@ -73,8 +73,11 @@ def test_clipping_inputs():
 
     # Act and Asset - Test input clipping
     # These should pass without exceptions
-    assert encoder.encode(10.0, test_sdr)  # At minimum edge case
-    assert encoder.encode(20.0, test_sdr)  # At maximum edge case
+    try:
+        encoder.encode(10.0, test_sdr)  # At minimum edge case
+        encoder.encode(20.0, test_sdr)  # At maximum edge case
+    except Exception as e:
+        pytest.fail(f"Unexpected exception raised: {e}")
 
     with pytest.raises(ValueError):
         encoder.encode(9.9, test_sdr)  # Below minimum edge case
@@ -112,8 +115,11 @@ def test_valid_scalar_inputs():
         encoder.encode(9.999, test_sdr)  # Below minimum edge case
         encoder.encode(20.0001, test_sdr)  # Above maximum edge case
 
-    assert encoder.encode(10.0, test_sdr)  # At minimum edge case
-    assert encoder.encode(19.9, test_sdr)  # Just below maximum edge case
+    try:
+        encoder.encode(10.0, test_sdr)  # At minimum edge case
+        encoder.encode(19.9, test_sdr)  # Just below maximum edge case
+    except Exception as e:
+        pytest.fail(f"Unexpected exception raised: {e}")
 
 
 def test_scalar_encoder_category_encode():
@@ -150,7 +156,13 @@ def test_scalar_encoder_category_encode():
         encoder.encode(66.0, output)  # Above maximum edge case
 
     # Value within range should not raise
-    assert encoder.encode(10.0, output)
+    try:
+        encoder.encode(0.0, output)  # At minimum edge case
+        encoder.encode(32.0, output)  # Mid-range value
+        encoder.encode(65.0, output)  # At maximum edge case
+        encoder.encode(10.0, output)
+    except Exception as e:
+        pytest.fail(f"Unexpected exception raised: {e}")
 
 
 def test_scalar_encoder_non_integer_bucket_width():
@@ -368,6 +380,7 @@ def test_scalar_encoder_serialization():
         size_or_radius_or_category_or_resolution=0,
         active_bits_or_sparsity=0,
     )
+    inputs.append(ScalarEncoder(r, [1, 700]))
     inputs.append(ScalarEncoder(r, [1, 700]))
 
     for encoder in inputs:

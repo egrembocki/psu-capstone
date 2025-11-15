@@ -1,14 +1,16 @@
 """Encoder Handler to build composite SDRs"""
 
+import copy
 from typing import List, Self
 
-from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+import pandas as pd
 
-# from psu_capstone.encoder_layer.categorical_encoder import CategoricalEncoder
-from psu_capstone.encoder_layer.date_encoder import DateEncoder
-from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder
-from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder
+from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
+
+# four methods to set parameters? for each encoder?
+# or just set them when initializing the encoder and not have a separate method?
 
 
 class EncoderHandler:
@@ -26,21 +28,10 @@ class EncoderHandler:
     def __init__(self, encoders: List[BaseEncoder]):
         self._encoders = encoders
 
-    def build_sdr(self, data: List) -> SDR:
+    def build_sdr(self, data: pd.DataFrame) -> SDR:
         """Builds a composite SDR from the provided data using the configured encoders
 
         Args:
-            data (List): List of data points to encode"""
-
+            data (pd.DataFrame): DataFrame of data points to encode"""
         if len(data) != len(self._encoders):
             raise ValueError("Data length does not match number of encoders")
-
-        sdrs = []
-
-        for i, encoder in enumerate(self._encoders):
-            sdr = SDR(data[i])
-            encoder.encode(data[i])
-            sdrs.append(sdr)
-
-        composite_sdr = SDR.concatenate(sdrs)
-        return composite_sdr

@@ -12,9 +12,12 @@
 
 """
 
+import copy
 import math
 from dataclasses import dataclass
+
 from typing import List, Union
+from ctypes import Structure
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
@@ -124,8 +127,11 @@ class ScalarEncoder(BaseEncoder):
      */"""
 
     def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
+        """Initialize the ScalarEncoder with given parameters and dimensions."""
         super().__init__(dimensions)
-        self.parameters = self.check_parameters(parameters)
+        # deep copy the incoming parameters
+        self.in_parameters = copy.deepcopy(parameters)
+        self.parameters = self.check_parameters(self.in_parameters)
         self._minimum = parameters.minimum
         self._maximum = parameters.maximum
         self._clip_input = parameters.clip_input
@@ -145,12 +151,12 @@ class ScalarEncoder(BaseEncoder):
         an SDR that has the encoding of the input value.
     """
 
-    def encode(self, input_value: float, output_sdr: SDR) -> bool:
+    def encode(self, input_value: float, output_sdr: SDR) -> None:
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
             output_sdr.zero()
-            return False
+            return
 
         elif self._clip_input:
             if self._periodic:
@@ -190,10 +196,6 @@ class ScalarEncoder(BaseEncoder):
             sparse.sort()
 
         output_sdr.set_sparse(sparse)
-
-        self.__sdr = output_sdr
-
-        return self.__sdr == output_sdr
 
     # After encode we may need a check_parameters method since most of the encoders have this
     def check_parameters(self, parameters: ScalarEncoderParameters):
@@ -296,27 +298,3 @@ class ScalarEncoder(BaseEncoder):
         assert args.sparsity > 0
 
         return args
-
-
-"""p = ScalarEncoderParameters(
-        minimum=10.0,
-        maximum=20.0,
-        clip_input=False,
-        periodic=False,
-        category=False,
-        active_bits=2,
-        sparsity=0.0,
-        size= 10,
-        radius=0.0,
-        resolution=0.0,
-        size_or_radius_or_category_or_resolution=0,
-        active_bits_or_sparsity=0
-)
-encoder3 = ScalarEncoder(p ,dimensions=[p.size])
-output = SDR(dimensions=[p.size])
-encoder3.encode(10.0, output)
-encoder3.encode(20.0, output)
-print(output)
-#encoder3.encode(9.9, output) ValueError
-#encoder3.encode(20.1, output) ValueError
-print(output)"""
