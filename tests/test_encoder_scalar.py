@@ -37,6 +37,8 @@ def test_scalar_encoder_initialization():
 
     # Act
     encoder = ScalarEncoder(parameters, [1, 10])
+    """Demonstrating deep copy"""
+    ScalarEncoder(parameters, [1, 10])
 
     # Assert
     assert isinstance(encoder, ScalarEncoder)
