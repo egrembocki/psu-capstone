@@ -56,6 +56,14 @@ class RandomDistributedScalarEncoder(BaseEncoder):
             hash_buffer = index + offset
             bucket = mmh3.hash(struct.pack("I", hash_buffer), self._seed, signed=False)
             bucket = bucket % self.size
+            """
+                Don't worry about hash collisions.  Instead measure the critical
+                properties of the encoder in unit tests and quantify how significant
+                the hash collisions are.  This encoder can not fix the collisions
+                because it does not record past encodings.  Collisions cause small
+                deviations in the sparsity or semantic similarity, depending on how
+                they're handled.
+            """
             data[bucket] = 1
 
         output.set_dense(data)

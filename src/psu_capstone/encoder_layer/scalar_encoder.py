@@ -125,19 +125,19 @@ class ScalarEncoder(BaseEncoder):
     def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]) -> None:
         """Initialize the ScalarEncoder with given parameters and dimensions."""
         super().__init__(dimensions)
-        # deep copy the incoming parameters
-        self.in_parameters = copy.deepcopy(parameters)
-        self.parameters = self.check_parameters(self.in_parameters)
-        self._minimum = parameters.minimum
-        self._maximum = parameters.maximum
-        self._clip_input = parameters.clip_input
-        self._periodic = parameters.periodic
-        self._category = parameters.category
-        self._active_bits = parameters.active_bits
-        self._sparsity = parameters.sparsity
-        self._size = parameters.size
-        self._radius = parameters.radius
-        self._resolution = parameters.resolution
+        self.parameters = copy.deepcopy(parameters)
+        self.parameters = self.check_parameters(self.parameters)
+
+        self._minimum = self.parameters.minimum
+        self._maximum = self.parameters.maximum
+        self._clip_input = self.parameters.clip_input
+        self._periodic = self.parameters.periodic
+        self._category = self.parameters.category
+        self._active_bits = self.parameters.active_bits
+        self._sparsity = self.parameters.sparsity
+        self._size = self.parameters.size
+        self._radius = self.parameters.radius
+        self._resolution = self.parameters.resolution
 
     """
         Encodes an input value into an SDR with a block of 1's.
