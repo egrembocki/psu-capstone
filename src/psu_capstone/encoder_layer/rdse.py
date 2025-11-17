@@ -1,3 +1,4 @@
+import copy
 import math
 import random
 import struct
@@ -27,36 +28,37 @@ class RDSEParameters:
 class RandomDistributedScalarEncoder(BaseEncoder):
     def __init__(self, parameters: RDSEParameters, dimensions: List[int]):
         super().__init__(dimensions)
-        parameters = self.check_parameters(parameters)
+        self.parameters = copy.deepcopy(parameters)
+        self.parameters = self.check_parameters(self.parameters)
 
-        self.memberSize = parameters.size
-        self.active_bits = parameters.activeBits
-        self.sparsity = parameters.sparsity
-        self.radius = parameters.radius
-        self.resolution = parameters.resolution
-        self.category = parameters.category
-        self.seed = parameters.seed
+        self._size = self.parameters.size
+        self._active_bits = self.parameters.active_bits
+        self._sparsity = self.parameters.sparsity
+        self._radius = self.parameters.radius
+        self._resolution = self.parameters.resolution
+        self._category = self.parameters.category
+        self._seed = self.parameters.seed
 
     def encode(self, input_value: float, output: SDR) -> None:
         assert output.size == self.size, "Output SDR size does not match encoder size."
         if math.isnan(input_value):
             output.zero()
             return
-        if self.category:
+        if self._category:
             if input_value != int(input_value) or input_value < 0:
                 raise ValueError("Input to category encoder must be an unsigned integer")
 
         data = [0] * self.size
 
-        index = int(input_value / self.resolution)
+        index = int(input_value / self._resolution)
 
-        for offset in range(self.active_bits):
+        for offset in range(self._active_bits):
             hash_buffer = index + offset
-            bucket = mmh3.hash(struct.pack("I", hash_buffer), self.seed, signed=False)
+            bucket = mmh3.hash(struct.pack("I", hash_buffer), self._seed, signed=False)
             bucket = bucket % self.size
             data[bucket] = 1
 
-        output.setDense(data)
+        output.set_dense(data)
         # output.setSparse(data) #we may need setDense implemented for SDR class
 
     # After encode we may need a check_parameters method since most of the encoders have this
@@ -64,7 +66,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         assert parameters.size > 0
 
         num_active_args = 0
-        if parameters.activeBits > 0:
+        if parameters.active_bits > 0:
             num_active_args += 1
         if parameters.sparsity > 0:
             num_active_args += 1
@@ -93,16 +95,16 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
         if args.sparsity > 0:
             assert 0 <= args.sparsity <= 1
-            args.activeBits = int(round(args.size * args.sparsity))
-            assert args.activeBits > 0
+            args.active_bits = int(round(args.size * args.sparsity))
+            assert args.active_bits > 0
 
         if args.category:
             args.radius = 1
 
         if args.radius > 0:
-            args.resolution = args.radius / args.activeBits
+            args.resolution = args.radius / args.active_bits
         elif args.resolution > 0:
-            args.radius = args.activeBits * args.resolution
+            args.radius = args.active_bits * args.resolution
 
         while args.seed == 0:
             args.seed = random.getrandbits(32)
@@ -111,10 +113,10 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
 
 # Tests
-params = RDSEParameters(
+"""params = RDSEParameters(
     size=1000, activeBits=0, sparsity=0.10, radius=10, resolution=0, category=False, seed=0
 )
 encoder = RandomDistributedScalarEncoder(params, dimensions=[params.size])
 output = SDR(dimensions=[params.size])
 encoder.encode(66, output)
-print(output.sparse)
+print(output.sparse)"""

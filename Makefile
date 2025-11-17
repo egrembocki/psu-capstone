@@ -55,15 +55,24 @@ update: ## Update dependencies
 
 test: ## Run tests with coverage
 	@echo "🧪 Running tests with coverage..."
+ifeq ($(OS),Windows_NT)
+	@set PYTHONPATH=src && uv run pytest ^
+		--cov="psu_capstone" ^
+		--cov-report=term-missing ^
+		--cov-report=html:htmlcov ^
+		--durations=0 ^
+		--disable-warnings ^
+		tests/
+else
 	@PYTHONPATH=src/ uv run pytest \
-			--cov="psu_capstone" \
-			--cov-report=term-missing \
-			--cov-report=html:htmlcov \
-			--durations=0 \
-			--disable-warnings \
-			tests/
+		--cov="psu_capstone" \
+		--cov-report=term-missing \
+		--cov-report=html:htmlcov \
+		--durations=0 \
+		--disable-warnings \
+		tests/
+endif
 	@echo "✅ Tests complete. Coverage report: htmlcov/index.html"
-
 
 setup-uv-windows: ## Install uv package manager on Windows
 	@echo "🚀 Installing uv package manager..."
