@@ -1,25 +1,60 @@
-"""Integration tests for Encoder to HTM layer."""
-
+import pandas as pd
 import pytest
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.input_layer.input_handler import InputHandler
 
 
-@pytest.fixture
-def TestEncoder() -> BaseEncoder:
-    """Fixture for a simple test encoder."""
+class DummyEncoder(BaseEncoder):
 
-    class TestEncoder(BaseEncoder):
-        """A simple test encoder implementation."""
+    def __init__(self, dimensions=None):
+        if dimensions is None:
+            dimensions = [32]  # arbitrary SDR size for the test
+        super().__init__(dimensions)
 
-        def encode(self, input_data: float) -> SDR:
-            """Encodes the input data into a simple SDR representation."""
-            # For testing purposes, create an SDR with fixed parameters
-            sdr = SDR([10, 2])
-            sdr.randomize(0.02)
-            # Simple encoding logic: activate bits based on input value
-            index = int(input_data) % (sdr.num_bits - sdr.active_bits + 1)
-            for i in range(sdr.active_bits):
-                sdr.set_bit(index + i)
-            return sdr
+    def attach_input(self, df: pd.DataFrame):
+        self.input_df = df
+
+    def encode(self, input_value, output_sdr):
+        return True
+
+
+# Note: This is expected to fail because we do not have an HTM interface yet
+# from psu_capstone.htm.interface import HTMinterface
+
+
+class HTMinterface:
+    """
+    Mock Class for HTM interface
+    """
+
+
+def test_encoder_to_htm_receives_sdr_object():
+
+    # Arrange
+    fib_sequence = [0, 1, 1, 2, 3, 5, 8, 13]
+
+    handler = InputHandler()
+    df = handler.to_dataframe(fib_sequence)
+    assert isinstance(df, pd.DataFrame)
+
+    encoder = DummyEncoder()
+    encoder.attach_input(df)
+
+    # HTM interface (not implemented yet)
+    htm = HTMinterface()
+
+    # Act
+    # Encode a single value
+    last_value = df.iloc[-1, 0]
+    sdr = SDR([1, 8])
+    sdr = encoder.encode(last_value, sdr)
+
+    # Hypothetical interface call: Would accept an SDR instance as input.
+    htm.consume_sdr(sdr)
+
+    # Assert
+    # Once HTMinterface is implemented, give it some observable state
+    assert isinstance(sdr, SDR)
+    assert htm.last_received_sdr is sdr
