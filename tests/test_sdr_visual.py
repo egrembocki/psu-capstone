@@ -1,11 +1,12 @@
 """Visual tests for SDR class."""
 
 from time import time
-from matplotlib.colors import ListedColormap
-import pytest
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
+from matplotlib.colors import ListedColormap
 
 from psu_capstone.encoder_layer.sdr import SDR
 
