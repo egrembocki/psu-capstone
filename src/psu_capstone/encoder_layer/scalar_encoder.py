@@ -122,12 +122,12 @@ class ScalarEncoder(BaseEncoder):
      * $ python -m htm.examples.encoders.scalar_encoder --help
      */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]):
+    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]) -> None:
         """Initialize the ScalarEncoder with given parameters and dimensions."""
         super().__init__(dimensions)
         # deep copy the incoming parameters
-        # self.in_parameters = copy.deepcopy(parameters)
-        self.parameters = self.check_parameters(parameters)
+        self.in_parameters = copy.deepcopy(parameters)
+        self.parameters = self.check_parameters(self.in_parameters)
         self._minimum = parameters.minimum
         self._maximum = parameters.maximum
         self._clip_input = parameters.clip_input

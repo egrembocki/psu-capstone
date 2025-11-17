@@ -1,5 +1,6 @@
 """Test cases for EncoderHandler to build union SDRs"""
 
+import copy
 from typing import List
 
 import pandas as pd
@@ -29,12 +30,11 @@ def handler() -> EncoderHandler:
         active_bits_or_sparsity=0,
     )
 
-    encoders = [
-        ScalarEncoder(parameters, [2, 5])
-        # ScalarEncoder(parameters, [2, 5])
-    ]
+    encoders: List[BaseEncoder] = []
 
-    return EncoderHandler([encoder for encoder in encoders])
+    encoders = [ScalarEncoder(parameters, [2, 5]), ScalarEncoder(parameters, [2, 5])]
+
+    return EncoderHandler(encoders)
 
 
 def test_handler_singleton(handler: EncoderHandler):
@@ -42,23 +42,23 @@ def test_handler_singleton(handler: EncoderHandler):
 
     # Arrange
 
-    TestHandler = EncoderHandler([])
+    TestHandler = handler
 
     # Act & Assert
+    assert isinstance(TestHandler, EncoderHandler)
+
     with pytest.raises(Exception):
         another_handler = EncoderHandler([])
 
-    assert isinstance(TestHandler, EncoderHandler)
-    assert not isinstance(another_handler, EncoderHandler)
 
+def test_copy_deepcopy_sdr(handler: EncoderHandler):
+    """Test copying and deep copying SDRs from multiple encoders"""
 
-def test_build_sdr(handler: EncoderHandler):
-    """Test building a composite SDR from multiple encoders"""
-    data = pd.DataFrame({"scalarOne": [25.0], "scalarTwo": [75.0]})
+    test_data = pd.DataFrame({"scalarOne": [25.0, 75.0, 100.0], "scalarTwo": [75.0, 80.0, 85.0]})
 
     rows = []
-    rows.append(data.iloc[0, 0])
-    rows.append(data.iloc[0, 1])
+    rows.append(test_data.iloc[0])
+    rows.append(test_data.iloc[1])
 
     sdrs = []
 
@@ -69,12 +69,25 @@ def test_build_sdr(handler: EncoderHandler):
         output_sdr = SDR(encoder.dimensions)
         output_sdr.zero()
 
+        assert output_sdr.get_sparse() == []
+
         print(f"Encoding value {input_value} with encoder {i}")
         print(f"Encoder dimensions: {encoder.dimensions}, size: {encoder.size}")
         print(f"Output SDR before encoding: {output_sdr}")
 
-        encoder.encode(input_value, output_sdr)
+        try:
+            encoder.encode(input_value, output_sdr)
+            assert not output_sdr.get_sparse() == []
+            print(f"Output SDR after encoding: {output_sdr}")
+        except Exception as e:
+            print(f"Encoding failed with error: {e}")
 
-        print(f"Output SDR after encoding: {output_sdr}")
+        sdrs.append(copy.deepcopy(output_sdr))
 
-        sdrs.append(output_sdr)
+        assert not sdrs[i].get_sparse() == []
+
+        assert sdrs[i].get_sparse() == output_sdr.get_sparse()
+
+        output_sdr.zero()
+
+        assert not sdrs[i].get_sparse() == []

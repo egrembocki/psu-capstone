@@ -1,6 +1,7 @@
 """Encoder Handler to build composite SDRs"""
 
 import copy
+import re
 from typing import List, Self
 
 import pandas as pd
@@ -16,11 +17,13 @@ from psu_capstone.encoder_layer.sdr import SDR
 class EncoderHandler:
     """Handles multiple encoders to create composite SDRs"""
 
-    def __new__(cls, encoders: List[BaseEncoder]) -> Self:
-        """Singleton pattern implementation -- only one instance of EncoderHandler allowed"""
-        if not hasattr(cls, "instance"):
-            cls.__instance = super(EncoderHandler, cls).__new__(cls)
+    __instance = None
 
+    def __new__(cls, encoders: List) -> Self:
+        """Singleton pattern implementation -- only one instance of EncoderHandler allowed"""
+
+        if cls.__instance is None:
+            cls.__instance = super(EncoderHandler, cls).__new__(cls)
             return cls.__instance
         else:
             raise Exception("Only one instance of EncoderHandler allowed")
@@ -35,3 +38,7 @@ class EncoderHandler:
             data (pd.DataFrame): DataFrame of data points to encode"""
         if len(data) != len(self._encoders):
             raise ValueError("Data length does not match number of encoders")
+
+        composite_sdr = SDR([])
+
+        return composite_sdr
