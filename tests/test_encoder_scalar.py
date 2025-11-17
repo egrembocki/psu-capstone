@@ -53,12 +53,12 @@ def test_clipping_inputs():
         maximum=20.0,
         clip_input=False,
         periodic=False,
-        category=False,
         active_bits=2,
         sparsity=0.0,
         size=10,
         radius=0.0,
         resolution=0.0,
+        category=False,
         size_or_radius_or_category_or_resolution=0,
         active_bits_or_sparsity=0,
     )

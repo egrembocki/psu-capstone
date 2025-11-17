@@ -14,10 +14,9 @@
 
 import copy
 import math
-from dataclasses import dataclass
-
-from typing import List, Union
 from ctypes import Structure
+from dataclasses import dataclass
+from typing import List, Union
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
@@ -108,9 +107,6 @@ class ScalarEncoderParameters:
     active_bits_or_sparsity: Union[int, float]
     """Helper field to indicate which of active_bits or sparsity is specified."""
 
-    size_or_radius_or_category_or_resolution: Union[int, float, bool]
-    """Helper field to indicate which of size, radius, category, or resolution is specified."""
-
 
 class ScalarEncoder(BaseEncoder):
     """
@@ -130,8 +126,8 @@ class ScalarEncoder(BaseEncoder):
         """Initialize the ScalarEncoder with given parameters and dimensions."""
         super().__init__(dimensions)
         # deep copy the incoming parameters
-        self.in_parameters = copy.deepcopy(parameters)
-        self.parameters = self.check_parameters(self.in_parameters)
+        # self.in_parameters = copy.deepcopy(parameters)
+        self.parameters = self.check_parameters(parameters)
         self._minimum = parameters.minimum
         self._maximum = parameters.maximum
         self._clip_input = parameters.clip_input
@@ -154,6 +150,8 @@ class ScalarEncoder(BaseEncoder):
     def encode(self, input_value: float, output_sdr: SDR) -> None:
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
+        if self._resolution <= 0.0:
+            raise ValueError("Encoder resolution must be positive!")
         if math.isnan(input_value):
             output_sdr.zero()
             return
@@ -175,7 +173,7 @@ class ScalarEncoder(BaseEncoder):
                     f"Received {input_value}"
                 )
 
-        start = int(round((input_value - self._minimum) / self._resolution))
+        start = int(round((input_value - self._minimum) / float(self._resolution)))
 
         """Handle edge case where start + active_bits exceeds output size.
           // The endpoints of the input range are inclusive, which means that the
