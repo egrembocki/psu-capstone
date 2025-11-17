@@ -45,7 +45,6 @@ def do_date_value_cases(encoder: DateEncoder, cases: List[DateValueCase]) -> Non
     """
     for c in cases:
         expected = SDR(dimensions=[encoder.size])
-        indices = sorted(c.excepted_output)
         expected.set_sparse(sorted(c.excepted_output))
 
         ts = _to_timestamp(c.time)
