@@ -1,7 +1,6 @@
 """Encoder Handler to build composite SDRs"""
 
 import copy
-
 from typing import List, Self
 
 import pandas as pd
