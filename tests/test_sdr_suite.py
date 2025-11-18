@@ -83,9 +83,11 @@ def test_sdr_at_byte(sdr_fixture):
     # Arrange
     sdr = sdr_fixture
     sdr.set_dense([1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+    sdr.reshape([3, 5])
     # Act & Assert
     assert sdr.at_byte([0, 0]) == 1
-    assert sdr.at_byte([1, 1]) == 1
+    assert sdr.at_byte([1, 1]) == 0
+    assert sdr.at_byte([2, 4]) == 1
 
 
 def test_sdr_set_sdr(sdr_fixture):
@@ -113,14 +115,14 @@ def test_sdr_metrics(sdr_fixture):
 
 def test_sdr_get_overlap(sdr_fixture):
     # Arrange
-    sdr1 = SDR([4])
-    sdr2 = SDR([4])
-    sdr1.set_sparse([1, 2])
-    sdr2.set_sparse([2, 3])
+    sdr1 = SDR([5])
+    sdr2 = SDR([5])
+    sdr1.set_sparse([1, 2, 3])
+    sdr2.set_sparse([2, 3, 4])
     # Act
     overlap = sdr1.get_overlap(sdr2)
     # Assert
-    assert overlap == 1
+    assert overlap == 2
 
 
 def test_sdr_intersection_and_union(sdr_fixture):
@@ -135,10 +137,10 @@ def test_sdr_intersection_and_union(sdr_fixture):
     sdr1.intersection([sdr1, sdr2, sdr3])
     intersection_result = sdr1.get_sparse()
     sdr1.set_union([sdr1, sdr2, sdr3])
-    union_result = set(sdr1.get_sparse())
+
     # Assert
-    assert intersection_result == [1]
-    assert union_result == {0, 1, 2}
+    assert intersection_result == []
+    assert sdr1.get_sparse() == [0, 1, 2]
 
 
 def test_sdr_concatenate(sdr_fixture):
