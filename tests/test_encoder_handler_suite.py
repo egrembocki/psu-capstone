@@ -42,13 +42,13 @@ def test_handler_singleton(handler: EncoderHandler):
 
     # Arrange
 
-    TestHandler = handler
+    test_handler = handler
 
     # Act & Assert
-    assert isinstance(TestHandler, EncoderHandler)
+    assert isinstance(test_handler, EncoderHandler)
 
     with pytest.raises(Exception):
-        another_handler = EncoderHandler([])
+        EncoderHandler([])
 
 
 def test_copy_deepcopy_sdr(handler: EncoderHandler):
@@ -77,17 +77,17 @@ def test_copy_deepcopy_sdr(handler: EncoderHandler):
 
         try:
             encoder.encode(input_value, output_sdr)
-            assert not output_sdr.get_sparse() == []
+            assert output_sdr.get_sparse() != []
             print(f"Output SDR after encoding: {output_sdr}")
         except Exception as e:
             print(f"Encoding failed with error: {e}")
 
         sdrs.append(copy.deepcopy(output_sdr))
 
-        assert not sdrs[i].get_sparse() == []
+        assert sdrs[i].get_sparse() != []
 
         assert sdrs[i].get_sparse() == output_sdr.get_sparse()
 
         output_sdr.zero()
 
-        assert not sdrs[i].get_sparse() == []
+        assert sdrs[i].get_sparse() != []
