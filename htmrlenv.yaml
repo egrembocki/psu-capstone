@@ -23,5 +23,5 @@ dependencies:
       - keras
       - tensorflow
       - stable-baselines3 
-      
+      - isort
       
