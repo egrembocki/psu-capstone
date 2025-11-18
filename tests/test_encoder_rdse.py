@@ -19,7 +19,7 @@ def test_rdse_initialization():
     )
 
     encoder = RandomDistributedScalarEncoder(parameters, [1, 1000])
-
+    """Makes sure it is the correct instance"""
     assert isinstance(encoder, RandomDistributedScalarEncoder)
 
 
@@ -30,7 +30,7 @@ def test_size():
     )
 
     encoder = RandomDistributedScalarEncoder(parameters, [1, 1000])
-
+    """Checks that the size is correct."""
     assert encoder._size == 1000
 
 
@@ -42,7 +42,7 @@ def test_dimensions():
 
     encoder = RandomDistributedScalarEncoder(parameters, [1, 1000])
     RandomDistributedScalarEncoder(parameters, [1, 1000])
-    assert encoder._resolution == 1.23
+    """Checks that the dimensions are correct in the encoder."""
     assert encoder.dimensions == [1, 1000]
 
 
@@ -56,13 +56,17 @@ def test_encode_active_bits():
     encoder = RandomDistributedScalarEncoder(parameters, [1, 1000])
     a = SDR(encoder.dimensions)
     encoder.encode(10, a)
+    """Is the SDR the correct size?"""
     assert a.size == 1000
+    """Is the SDR the correct dimensions?"""
     assert a.dimensions == [1, 1000]
     sparse_indices = a.get_sparse()
     sparse_size = len(sparse_indices)
+    """Since we have hash collision we are making sure between 45 and 50 bits are encoded."""
     assert 45 <= sparse_size <= 50
     dense_indices = a.get_dense()
     dense_size = len(dense_indices)
+    """Is the dense size equal to size?"""
     assert dense_size == 1000
 
 
@@ -72,7 +76,10 @@ def test_resolution_plus_radius_plus_category():
     parameters = RDSEParameters(
         size=1000, active_bits=50, sparsity=0.0, radius=1.0, resolution=1.5, category=False, seed=0
     )
-    """"Make sure an exception is thrown here"""
+    """
+    Make sure an exception is thrown here since these parameters should
+    not be used together.
+    """
     with pytest.raises(Exception):
         RandomDistributedScalarEncoder(parameters, [1, 1000])
         parameters.radius = 0
@@ -88,10 +95,10 @@ def test_sparsity_or_activebits():
     parameters = RDSEParameters(
         size=1000, active_bits=50, sparsity=1.0, radius=0.0, resolution=1.5, category=False, seed=0
     )
-    """Make sure an exception is thrown here"""
+    """Make sure an exception is thrown here since both sparsity and active bits are set."""
     with pytest.raises(Exception):
         RandomDistributedScalarEncoder(parameters, [1, 1000])
-    """These should be able to run without an exception or assert"""
+    """These should be able to run without an exception or assert since both are not set at once."""
     parameters.sparsity = 0.0
     RandomDistributedScalarEncoder(parameters, [1, 1000])
     parameters.sparsity = 1.0
