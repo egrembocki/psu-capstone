@@ -1,7 +1,7 @@
 """Encoder Handler to build composite SDRs"""
 
 import copy
-import re
+
 from typing import List, Self
 
 import pandas as pd
@@ -19,14 +19,13 @@ class EncoderHandler:
 
     __instance = None
 
-    def __new__(cls, encoders: List) -> Self:
+    def __new__(cls, encoders: List) -> "EncoderHandler":
         """Singleton pattern implementation -- only one instance of EncoderHandler allowed"""
 
         if cls.__instance is None:
             cls.__instance = super(EncoderHandler, cls).__new__(cls)
-            return cls.__instance
-        else:
-            raise Exception("Only one instance of EncoderHandler allowed")
+
+        return cls.__instance
 
     def __init__(self, encoders: List[BaseEncoder]):
         self._encoders = encoders
@@ -42,3 +41,6 @@ class EncoderHandler:
         composite_sdr = SDR([])
 
         return composite_sdr
+
+
+# helper parameters setting methods could go here

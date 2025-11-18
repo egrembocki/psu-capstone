@@ -15,6 +15,7 @@ from psu_capstone.encoder_layer.sdr import SDR
 @pytest.fixture
 def handler() -> EncoderHandler:
     """Fixture to create an EncoderHandler with multiple encoders"""
+    # Arrange
     parameters = ScalarEncoderParameters(
         minimum=0.0,
         maximum=100.0,
@@ -41,53 +42,44 @@ def test_handler_singleton(handler: EncoderHandler):
     """Test that EncoderHandler enforces singleton pattern"""
 
     # Arrange
+    test_encoders = handler._encoders
 
-    test_handler = handler
+    # Act
+    h1 = handler
+    h2 = EncoderHandler(test_encoders)
 
-    # Act & Assert
-    assert isinstance(test_handler, EncoderHandler)
-
-    with pytest.raises(Exception):
-        EncoderHandler([])
+    # Assert
+    assert h1 is h2
 
 
 def test_copy_deepcopy_sdr(handler: EncoderHandler):
     """Test copying and deep copying SDRs from multiple encoders"""
 
-    test_data = pd.DataFrame({"scalarOne": [25.0, 75.0, 100.0], "scalarTwo": [75.0, 80.0, 85.0]})
+    test_data = pd.DataFrame({"scalarOne": [25.0], "scalarTwo": [75.0]})
 
-    rows = []
-    rows.append(test_data.iloc[0])
-    rows.append(test_data.iloc[1])
+    # Extract scalar values directly for each ,encoder
+    input_values = [test_data["scalarOne"].iloc[0], test_data["scalarTwo"].iloc[0]]
 
     sdrs = []
 
     encoders: List[BaseEncoder] = handler._encoders
 
     for i, encoder in enumerate(encoders):
-        input_value = rows[i]
+        input_value = float(input_values[i])
         output_sdr = SDR(encoder.dimensions)
         output_sdr.zero()
 
         assert output_sdr.get_sparse() == []
 
-        print(f"Encoding value {input_value} with encoder {i}")
-        print(f"Encoder dimensions: {encoder.dimensions}, size: {encoder.size}")
-        print(f"Output SDR before encoding: {output_sdr}")
-
         try:
             encoder.encode(input_value, output_sdr)
             assert output_sdr.get_sparse() != []
-            print(f"Output SDR after encoding: {output_sdr}")
         except Exception as e:
-            print(f"Encoding failed with error: {e}")
+            pytest.fail(f"Encoding failed with exception: {e}")
 
-        sdrs.append(copy.deepcopy(output_sdr))
-
-        assert sdrs[i].get_sparse() != []
-
+        copied_sdr = copy.deepcopy(output_sdr)
+        sdrs.append(copied_sdr)
         assert sdrs[i].get_sparse() == output_sdr.get_sparse()
-
-        output_sdr.zero()
-
         assert sdrs[i].get_sparse() != []
+        output_sdr.zero()
+        assert sdrs[i].get_sparse() != output_sdr.get_sparse()

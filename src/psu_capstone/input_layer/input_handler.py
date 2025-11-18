@@ -18,15 +18,15 @@ class InputHandler:
 
     """
 
-    _instance = None
+    __instance = None
 
     def __new__(cls) -> "InputHandler":
         """Constructor -- Singleton pattern implementation."""
 
-        if cls._instance is None:
-            cls._instance = super(InputHandler, cls).__new__(cls)
+        if cls.__instance is None:
+            cls.__instance = super(InputHandler, cls).__new__(cls)
 
-        return cls._instance
+        return cls.__instance
 
     def __init__(self):
         """Initialize the InputHandler singleton."""
