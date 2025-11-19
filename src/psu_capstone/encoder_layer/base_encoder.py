@@ -33,7 +33,7 @@ from psu_capstone.encoder_layer.sdr import SDR
 class BaseEncoder(ABC):
     """Base class for all encoders"""
 
-    def __init__(self, dimensions: List[int]):
+    def __init__(self, dimensions: List[int] = None):
         """Initialize the BaseEncoder.
            /**
         * Members dimensions & size describe the shape of the encoded output SDR.
@@ -42,8 +42,12 @@ class BaseEncoder(ABC):
            (input space).
         */"""
         self._dimensions: List[int] = dimensions
-        self._size: int = prod(int(dim) for dim in self._dimensions)
-        self._sdr: SDR = SDR(self._dimensions)
+        if self._dimensions is not None:
+            self._size: int = prod(int(dim) for dim in self._dimensions)
+            self._sdr: SDR = SDR(self._dimensions)
+        else:
+            self._size: int = 0
+            self._sdr: SDR = None
 
     @property
     def dimensions(self) -> List[int]:
