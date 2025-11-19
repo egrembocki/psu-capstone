@@ -10,14 +10,13 @@ class DummyEncoder(BaseEncoder):
 
     def __init__(self, dimensions=None):
         if dimensions is None:
-            dimensions = [32]  # arbitrary SDR size for the test
-        super().__init__(dimensions)
+            dimensions = [8, 1]  # arbitrary SDR size for the test
 
     def attach_input(self, df: pd.DataFrame):
         self.input_df = df
 
-    def encode(self, input_value, output_sdr):
-        return True
+    def encode(self, input_value: float, output_sdr: SDR) -> None:
+        pass
 
 
 # Note: This is expected to fail because we do not have an HTM interface yet
@@ -27,7 +26,15 @@ class DummyEncoder(BaseEncoder):
 class HTMinterface:
     """
     Mock Class for HTM interface
+
+
     """
+
+    def __init__(self, sdr: SDR):
+        self.last_received_sdr = sdr
+
+    def consume_sdr(self, sdr: SDR):
+        self.last_received_sdr = sdr
 
 
 def test_encoder_to_htm_receives_sdr_object():
@@ -37,24 +44,26 @@ def test_encoder_to_htm_receives_sdr_object():
 
     handler = InputHandler()
     df = handler.to_dataframe(fib_sequence)
-    assert isinstance(df, pd.DataFrame)
 
     encoder = DummyEncoder()
     encoder.attach_input(df)
 
     # HTM interface (not implemented yet)
-    htm = HTMinterface()
+    htm = HTMinterface(sdr=SDR([8, 1]))
 
     # Act
     # Encode a single value
-    last_value = df.iloc[-1, 0]
-    sdr = SDR([1, 8])
-    sdr = encoder.encode(last_value, sdr)
+    last_value = df.iloc[3].values[0]
+    sdr = SDR([8, 1])
+    encoder.encode(last_value, sdr)
 
-    # Hypothetical interface call: Would accept an SDR instance as input.
+    # Mock interface call: Would accept an SDR instance as input.
     htm.consume_sdr(sdr)
 
     # Assert
     # Once HTMinterface is implemented, give it some observable state
+    assert isinstance(df, pd.DataFrame)
+    assert last_value == 2
+    assert df.shape == (8, 1)
     assert isinstance(sdr, SDR)
     assert htm.last_received_sdr is sdr

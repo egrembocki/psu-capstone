@@ -3,12 +3,13 @@ import math
 import random
 import struct
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import mmh3
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.utils import Parameters
 
 """
  * Parameters for the RandomDistributedScalarEncoder (RDSE)
@@ -79,7 +80,11 @@ class RDSEParameters:
 
 
 class RandomDistributedScalarEncoder(BaseEncoder):
-    def __init__(self, parameters: RDSEParameters, dimensions: List[int]):
+    """Random Distributed Scalar Encoder (RDSE) implementation."""
+
+    def __init__(
+        self, parameters: RDSEParameters | Parameters, dimensions: Optional[List[int]] = None
+    ):
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
         self.parameters = self.check_parameters(self.parameters)
@@ -98,7 +103,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
     """
 
     def encode(self, input_value: float, output: SDR) -> None:
-        assert output.size == self.size, "Output SDR size does not match encoder size."
+        assert output.size == self._size, "Output SDR size does not match encoder size."
         if math.isnan(input_value):
             output.zero()
             return
@@ -126,12 +131,8 @@ class RandomDistributedScalarEncoder(BaseEncoder):
 
         output.set_dense(data)
 
-    """
-    Check parameters is simply to make sure all of the entered parameters work together.
-    This method also modifies some depending on the entries.
-    """
-
-    def check_parameters(self, parameters: RDSEParameters):
+    # After encode we may need a check_parameters method since most of the encoders have this
+    def check_parameters(self, parameters: RDSEParameters | Parameters):
         assert parameters.size > 0
 
         num_active_args = 0

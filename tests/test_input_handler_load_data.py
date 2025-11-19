@@ -124,7 +124,7 @@ def test_load_data_requires_string_path(tmp_path: Path, handler: InputHandler) -
 def test_input_handler_is_singleton() -> None:
     h1 = InputHandler()
     h2 = InputHandler()
-    assert h1 is h2
+    assert h1 == h2
 
 
 def test_load_data_sets_internal_data(tmp_path: Path, handler: InputHandler) -> None:

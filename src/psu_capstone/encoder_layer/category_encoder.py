@@ -77,6 +77,7 @@ class CategoryEncoder(BaseEncoder):
                 seed=0,
             )
             self.encoder = RandomDistributedScalarEncoder(self.rdsep, dimensions=[self.rdsep.size])
+            self._dimensions = [self.rdsep.size]
             """
             This means we want the scalar encoder to be used and this sets our encoder object to a Scalar encoder with proper parameters.
             """
@@ -96,6 +97,7 @@ class CategoryEncoder(BaseEncoder):
                 active_bits_or_sparsity=0,
             )
             self.encoder = ScalarEncoder(self.sp, dimensions=[self.sp.size])
+            self._dimensions = [self.sp.size]
 
     def encode(self, input_value: str, output_sdr):
         if input_value not in self._category_list:
