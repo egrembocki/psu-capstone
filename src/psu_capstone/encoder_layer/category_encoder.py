@@ -1,7 +1,9 @@
 """Category Encoder implementation"""
 
 import copy
-
+import math
+import random
+import struct
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -51,7 +53,7 @@ class CategoryEncoder(BaseEncoder):
                     :class:`.ScalarEncoder` for details. (default False)
     """
 
-    def __init__(self, parameters: CategoryParameters, dimensions: List[int] | None = None):
+    def __init__(self, parameters: CategoryParameters, dimensions: List[int] = None):
         super().__init__(dimensions)
 
         self.parameters = copy.deepcopy(parameters)
@@ -75,6 +77,7 @@ class CategoryEncoder(BaseEncoder):
                 seed=0,
             )
             self.encoder = RandomDistributedScalarEncoder(self.rdsep, dimensions=[self.rdsep.size])
+            self._dimensions = [self.rdsep.size]
             """
             This means we want the scalar encoder to be used and this sets our encoder object to a Scalar encoder with proper parameters.
             """
@@ -94,23 +97,14 @@ class CategoryEncoder(BaseEncoder):
                 active_bits_or_sparsity=0,
             )
             self.encoder = ScalarEncoder(self.sp, dimensions=[self.sp.size])
+            self._dimensions = [self.sp.size]
 
     def encode(self, input_value: str, output_sdr):
-        # Get category list and width
-        category_list = self.parameters.category_list
-        w = self.parameters.w
-
-        # Find index of input_value in category_list
-        try:
-            idx = category_list.index(input_value)
-        except ValueError:
-            # Unknown category: set no bits
-            output_sdr.set_sparse([])
-            return
-
-        # Set bits for this category
-        bits = list(range(idx * w, (idx + 1) * w))
-        output_sdr.set_sparse(bits)
+        if input_value not in self._category_list:
+            index = 0
+        else:
+            index = self._category_list.index(input_value) + 1
+        self.encoder.encode(float(index), output_sdr)
 
     def check_parameters(self, parameters: CategoryParameters):
         if parameters.w <= 0:

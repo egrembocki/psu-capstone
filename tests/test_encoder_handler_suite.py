@@ -21,10 +21,10 @@ def handler() -> EncoderHandler:
     df = pd.DataFrame(
         [
             {
-                "float_col": float(3.14),
-                "int_col": int(42),
-                "str_col": str("B"),
-                "date_col": datetime(2023, 12, 25),
+                "float_col": float(3.14),  # rdse
+                "int_col": int(42),  # scalar
+                "str_col": str("B"),  # category
+                "date_col": datetime(2023, 12, 25),  # date
             }
         ]
     )
@@ -61,13 +61,10 @@ def test_copy_deepcopy_sdr(handler: EncoderHandler):
 
     # Assert that a deep copy occurs
     for i, encoder in enumerate(handler._encoders):
-        input_value = rows.iloc[i]  # Fix FutureWarning
+        input_value = rows.iloc[i]
 
-        # Use encoder.size if available, otherwise encoder.dimensions
-        if hasattr(encoder, "size"):
-            output_sdr = SDR([encoder.size])
-        else:
-            output_sdr = SDR(encoder.dimensions)
+        output_sdr = SDR(encoder.dimensions)
+
         output_sdr.zero()
 
         assert output_sdr.get_sparse() == []

@@ -14,10 +14,8 @@
 
 import copy
 import math
-
-from psu_capstone.utils import Parameters
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Union
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
@@ -123,12 +121,7 @@ class ScalarEncoder(BaseEncoder):
      * $ python -m htm.examples.encoders.scalar_encoder --help
      */"""
 
-    def __init__(
-        self,
-        parameters: ScalarEncoderParameters | Parameters,
-        dimensions: Optional[List[int]] = None,
-    ) -> None:
-        """Initialize the ScalarEncoder with given parameters and dimensions."""
+    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int] = None):
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
         self.parameters = self.check_parameters(self.parameters)
@@ -152,20 +145,18 @@ class ScalarEncoder(BaseEncoder):
         an SDR that has the encoding of the input value.
     """
 
-    def encode(self, input_value: float | int, output_sdr: SDR) -> None:
+    def encode(self, input_value: float, output_sdr: SDR) -> bool:
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
-        if self._resolution <= 0.0:
-            raise ValueError("Encoder resolution must be positive!")
         if math.isnan(input_value):
             output_sdr.zero()
-            return
+            return False
 
         elif self._clip_input:
             if self._periodic:
                 """TODO: implement modlus to inputs"""
                 input_value = input_value % self._maximum
-
+                # raise NotImplementedError("Periodic input clipping not implemented.")
             else:
                 input_value = max(input_value, self._minimum)
                 input_value = min(input_value, self._maximum)
@@ -178,7 +169,7 @@ class ScalarEncoder(BaseEncoder):
                     f"Received {input_value}"
                 )
 
-        start = int(round((input_value - self._minimum) / float(self._resolution)))
+        start = int(round((input_value - self._minimum) / self._resolution))
 
         """Handle edge case where start + active_bits exceeds output size.
           // The endpoints of the input range are inclusive, which means that the
@@ -200,10 +191,12 @@ class ScalarEncoder(BaseEncoder):
 
         output_sdr.set_sparse(sparse)
 
+        self.__sdr = output_sdr
+
+        return self.__sdr == output_sdr
+
     # After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(
-        self, parameters: ScalarEncoderParameters | Parameters
-    ) -> ScalarEncoderParameters | Parameters:
+    def check_parameters(self, parameters: ScalarEncoderParameters):
         """
         Check parameters method is used to verify that the correct parameters were entered
         and reject the user when they are not.
@@ -303,3 +296,27 @@ class ScalarEncoder(BaseEncoder):
         assert args.sparsity > 0
 
         return args
+
+
+"""p = ScalarEncoderParameters(
+        minimum=10.0,
+        maximum=20.0,
+        clip_input=False,
+        periodic=False,
+        category=False,
+        active_bits=2,
+        sparsity=0.0,
+        size= 10,
+        radius=0.0,
+        resolution=0.0,
+        size_or_radius_or_category_or_resolution=0,
+        active_bits_or_sparsity=0
+)
+encoder3 = ScalarEncoder(p ,dimensions=[p.size])
+output = SDR(dimensions=[p.size])
+encoder3.encode(10.0, output)
+encoder3.encode(20.0, output)
+print(output)
+#encoder3.encode(9.9, output) ValueError
+#encoder3.encode(20.1, output) ValueError
+print(output)"""

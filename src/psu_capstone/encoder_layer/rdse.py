@@ -11,7 +11,6 @@ from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
 from psu_capstone.utils import Parameters
 
-
 """
  * Parameters for the RandomDistributedScalarEncoder (RDSE)
  *
@@ -104,7 +103,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
     """
 
     def encode(self, input_value: float, output: SDR) -> None:
-        assert output.size == self.size, "Output SDR size does not match encoder size."
+        assert output.size == self._size, "Output SDR size does not match encoder size."
         if math.isnan(input_value):
             output.zero()
             return

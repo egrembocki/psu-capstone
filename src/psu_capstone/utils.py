@@ -1,7 +1,7 @@
 """Utility functions for PSU Capstone project. Global utilities used across the project."""
 
 from ctypes import Structure as Struct
-from ctypes import c_float, c_bool, c_int
+from ctypes import c_bool, c_float, c_int
 
 
 class Parameters(Struct):
@@ -85,8 +85,8 @@ class Parameters(Struct):
 def smoke_check():
     """Basic smoke check for utils module."""
     try:
-        from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder
         from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder
+        from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder
 
         p = Parameters()
         # Only pass 'size' as the second argument to avoid the error

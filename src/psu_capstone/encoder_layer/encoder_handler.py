@@ -117,9 +117,7 @@ class EncoderHandler:
             elif isinstance(value, str):
                 # Build category_list from all unique values in the column
                 category_list = input_data[col_name].unique().tolist()
-                encoder = CategoryEncoder(
-                    CategoryParameters(w=3, category_list=category_list), [2, 5]
-                )
+                encoder = CategoryEncoder(CategoryParameters(w=3, category_list=category_list))
                 print(
                     f"Encoding string value '{value}' with category list: {encoder.parameters.category_list}"
                 )
@@ -142,10 +140,10 @@ class EncoderHandler:
                         custom_days=[],
                         verbose=False,
                     ),
-                    [2, 5],
+                    [1, 45],
                 )
                 # Use encoder.size for SDR size
-                sdr = SDR([encoder.size])
+                sdr = SDR(encoder.dimensions)
                 encoder.encode(value, sdr)
 
             else:

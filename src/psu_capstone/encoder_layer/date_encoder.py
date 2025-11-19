@@ -73,10 +73,6 @@ class DateEncoder(BaseEncoder):
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
 
-        self.parameters = super().check_params(
-            self.parameters
-        )  # poof of concept for paramter checking at the Base Class level
-
         # encoders
         self.seasonEncoder: ScalarEncoder | None = None
         self.dayOfWeekEncoder: ScalarEncoder | None = None

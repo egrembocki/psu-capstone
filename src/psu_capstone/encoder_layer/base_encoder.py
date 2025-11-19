@@ -30,10 +30,8 @@ from typing import List, TypeVar, Generic, Any, Optional
 
 from psu_capstone.encoder_layer.sdr import SDR
 
-T = TypeVar("T")
 
-
-class BaseEncoder(ABC, Generic[T]):
+class BaseEncoder(ABC):
     """Base class for all encoders"""
 
     def __init__(self, dimensions: Optional[List[int]] = None):
@@ -59,11 +57,7 @@ class BaseEncoder(ABC, Generic[T]):
         self._dimensions = []
         self._size = 0
 
-    def check_params(self, parameters: Parameters) -> Any:
-        """Checks if the encoder parameters are valid. To be implemented by subclasses."""
-        return parameters
-
     @abstractmethod
-    def encode(self, input_value: T, output_sdr: SDR) -> None:
+    def encode(self, input_value: float, output_sdr: SDR) -> None:
         """Encodes the input value into the provided output SDR."""
         raise NotImplementedError("Subclasses must implement this method")
