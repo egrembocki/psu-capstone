@@ -209,8 +209,8 @@ class ScalarEncoder(BaseEncoder):
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([parameters.active_bits > 0, parameters.sparsity > 0])
         assert num_active_args != 0, "Missing argument, need one of: 'active_bits', 'sparsity'."
-        print(str(parameters.sparsity))
-        print(str(parameters.active_bits))
+        # print(str(parameters.sparsity))
+        # print(str(parameters.active_bits))
         assert (
             num_active_args == 1
         ), "Specified both: 'active_bits', 'sparsity'. Specify only one of them." + str(

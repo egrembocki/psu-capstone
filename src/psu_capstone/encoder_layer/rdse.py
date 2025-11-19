@@ -10,19 +10,72 @@ import mmh3
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
 
-# from SDR import SDR
-# from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
+"""
+ * Parameters for the RandomDistributedScalarEncoder (RDSE)
+ *
+ * Members "activeBits" & "sparsity" are mutually exclusive, specify exactly one
+ * of them.
+ *
+ * Members "radius", "resolution", & "category" are mutually exclusive, specify
+ * exactly one of them.
+"""
 
 
 @dataclass
 class RDSEParameters:
+    """
+    * Member "size" is the total number of bits in the encoded output SDR.
+    """
+
     size: int
+    """
+    * Member "activeBits" is the number of true bits in the encoded output SDR.
+    """
     active_bits: int
+    """
+    * Member "sparsity" is the fraction of bits in the encoded output which this
+    * encoder will activate. This is an alternative way to specify the member
+    * "activeBits".
+    """
     sparsity: float
+    """
+    * Member "radius" Two inputs separated by more than the radius have
+    * non-overlapping representations. Two inputs separated by less than the
+    * radius will in general overlap in at least some of their bits. You can
+    * think of this as the radius of the input.
+    """
     radius: float
+    """
+    * Member "resolution" Two inputs separated by greater than, or equal to the
+    * resolution will in general have different representations.
+    """
     resolution: float
+    """
+    * Member "category" means that the inputs are enumerated categories.
+    * If true then this encoder will only encode unsigned integers, and all
+    * inputs will have unique / non-overlapping representations.
+    """
     category: bool
+    """
+    * Member "seed" forces different encoders to produce different outputs, even
+    * if the inputs and all other parameters are the same.  Two encoders with the
+    * same seed, parameters, and input will produce identical outputs.
+    *
+    * The seed 0 is special.  Seed 0 is replaced with a random number.
+    """
     seed: int
+
+
+"""
+ * Encodes a real number as a set of randomly generated activations.
+ *
+ * Description:
+ * The RandomDistributedScalarEncoder (RDSE) encodes a numeric scalar (floating
+ * point) value into an SDR.  The RDSE is more flexible than the ScalarEncoder.
+ * This encoder does not need to know the minimum and maximum of the input
+ * range.  It does not assign an input->output mapping at construction.  Instead
+ * the encoding is determined at runtime.
+"""
 
 
 class RandomDistributedScalarEncoder(BaseEncoder):
@@ -38,6 +91,11 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         self._resolution = self.parameters.resolution
         self._category = self.parameters.category
         self._seed = self.parameters.seed
+
+    """
+    Encodes an input value into an SDR with a random distributed scalar encoder.
+    We employ the murmur hashing.
+    """
 
     def encode(self, input_value: float, output: SDR) -> None:
         assert output.size == self.size, "Output SDR size does not match encoder size."
@@ -67,9 +125,12 @@ class RandomDistributedScalarEncoder(BaseEncoder):
             data[bucket] = 1
 
         output.set_dense(data)
-        # output.setSparse(data) #we may need setDense implemented for SDR class
 
-    # After encode we may need a check_parameters method since most of the encoders have this
+    """
+    Check parameters is simply to make sure all of the entered parameters work together.
+    This method also modifies some depending on the entries.
+    """
+
     def check_parameters(self, parameters: RDSEParameters):
         assert parameters.size > 0
 
@@ -120,11 +181,15 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         return args
 
 
-# Tests
-"""params = RDSEParameters(
-    size=1000, activeBits=0, sparsity=0.10, radius=10, resolution=0, category=False, seed=0
+"""# Tests
+params = RDSEParameters(
+    size=1000, active_bits=20, sparsity=0.0, radius=0, resolution=1.5, category=False, seed=0, deterministic=False
 )
-encoder = RandomDistributedScalarEncoder(params, dimensions=[params.size])
-output = SDR(dimensions=[params.size])
-encoder.encode(66, output)
-print(output.sparse)"""
+encoder = RandomDistributedScalarEncoder(params, [1, 1000])
+output = SDR([1, 1000])
+encoder.encode(10, output)
+print(output.get_sparse())
+output2 = SDR([1, 1000])
+encoder.encode(10, output2)
+print(output2.get_sparse())
+This should be made a test probably"""
