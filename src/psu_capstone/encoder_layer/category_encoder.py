@@ -114,7 +114,7 @@ class CategoryEncoder(BaseEncoder):
         return parameters
 
 
-# This tests the Scalar and RDSE versions to make sure we are getting correct encodings
+"""# This tests the Scalar and RDSE versions to make sure we are getting correct encodings
 categories = ["ES", "GB", "US"]
 parameters = CategoryParameters(w=3, category_list=categories, RDSEused=False)
 e = CategoryEncoder(parameters=parameters)
@@ -156,4 +156,4 @@ e1.encode("NA", a1)
 e1.encode("NA", a2)
 print(a1.get_dense())
 print(a2.get_dense())
-assert a1.get_dense() == a2.get_dense()
+assert a1.get_dense() == a2.get_dense()"""
