@@ -1,9 +1,11 @@
 """Test cases for EncoderHandler to build union SDRs"""
 
 import copy
+from datetime import datetime
 from typing import List
 
 import pandas as pd
+
 import pytest
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
@@ -15,38 +17,32 @@ from psu_capstone.encoder_layer.sdr import SDR
 @pytest.fixture
 def handler() -> EncoderHandler:
     """Fixture to create an EncoderHandler with multiple encoders"""
-    # Arrange
-    parameters = ScalarEncoderParameters(
-        minimum=0.0,
-        maximum=100.0,
-        clip_input=True,
-        periodic=False,
-        active_bits=5,
-        sparsity=0.0,
-        size=10,
-        radius=0.0,
-        category=False,
-        resolution=0.0,
-        size_or_radius_or_category_or_resolution=0,
-        active_bits_or_sparsity=0,
+
+    df = pd.DataFrame(
+        [
+            {
+                "float_col": float(3.14),
+                "int_col": int(42),
+                "str_col": str("B"),
+                "date_col": datetime(2023, 12, 25),
+            }
+        ]
     )
 
-    encoders: List[BaseEncoder] = []
+    handler = EncoderHandler(df)
 
-    encoders = [ScalarEncoder(parameters, [2, 5]), ScalarEncoder(parameters, [2, 5])]
-
-    return EncoderHandler(encoders)
+    return handler
 
 
 def test_handler_singleton(handler: EncoderHandler):
     """Test that EncoderHandler enforces singleton pattern"""
 
     # Arrange
-    test_encoders = handler._encoders
+    test_input = handler._data_frame
 
     # Act
     h1 = handler
-    h2 = EncoderHandler(test_encoders)
+    h2 = EncoderHandler(test_input)
 
     # Assert
     assert h1 is h2
@@ -55,18 +51,23 @@ def test_handler_singleton(handler: EncoderHandler):
 def test_copy_deepcopy_sdr(handler: EncoderHandler):
     """Test copying and deep copying SDRs from multiple encoders"""
 
-    test_data = pd.DataFrame({"scalarOne": [25.0], "scalarTwo": [75.0]})
-
-    # Extract scalar values directly for each ,encoder
-    input_values = [test_data["scalarOne"].iloc[0], test_data["scalarTwo"].iloc[0]]
-
+    # Arrange
+    test_data = handler._data_frame
+    rows = test_data.iloc[0]
     sdrs = []
 
-    encoders: List[BaseEncoder] = handler._encoders
+    # Act
+    handler.build_composite_sdr(test_data)
 
-    for i, encoder in enumerate(encoders):
-        input_value = float(input_values[i])
-        output_sdr = SDR(encoder.dimensions)
+    # Assert that a deep copy occurs
+    for i, encoder in enumerate(handler._encoders):
+        input_value = rows.iloc[i]  # Fix FutureWarning
+
+        # Use encoder.size if available, otherwise encoder.dimensions
+        if hasattr(encoder, "size"):
+            output_sdr = SDR([encoder.size])
+        else:
+            output_sdr = SDR(encoder.dimensions)
         output_sdr.zero()
 
         assert output_sdr.get_sparse() == []

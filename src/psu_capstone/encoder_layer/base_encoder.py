@@ -23,31 +23,27 @@
 
 """
 
+from psu_capstone.utils import Parameters
 from abc import ABC, abstractmethod
 from math import prod
-from typing import List
+from typing import List, TypeVar, Generic, Any, Optional
 
 from psu_capstone.encoder_layer.sdr import SDR
 
+T = TypeVar("T")
 
-class BaseEncoder(ABC):
+
+class BaseEncoder(ABC, Generic[T]):
     """Base class for all encoders"""
 
-    def __init__(self, dimensions: List[int] = None):
-        """Initialize the BaseEncoder.
-           /**
-        * Members dimensions & size describe the shape of the encoded output SDR.
-        * Size is the total number of bits in the result.
-        * Dimensions is a list of integers describing the shape of the SDR
-           (input space).
-        */"""
-        self._dimensions: List[int] = dimensions
-        if self._dimensions is not None:
+    def __init__(self, dimensions: Optional[List[int]] = None):
+        """Initializes the BaseEncoder with given dimensions."""
+
+        self._dimensions: List[int] = dimensions if dimensions is not None else []
+        if self._dimensions:
             self._size: int = prod(int(dim) for dim in self._dimensions)
-            self._sdr: SDR = SDR(self._dimensions)
         else:
             self._size: int = 0
-            self._sdr: SDR = None
 
     @property
     def dimensions(self) -> List[int]:
@@ -57,17 +53,17 @@ class BaseEncoder(ABC):
     def size(self) -> int:
         return self._size
 
-    @property
-    def sdr(self) -> SDR:
-        return self._sdr
-
     def reset(self):
-        pass
+        """Resets the encoder to its initial state if applicable."""
+
+        self._dimensions = []
+        self._size = 0
+
+    def check_params(self, parameters: Parameters) -> Any:
+        """Checks if the encoder parameters are valid. To be implemented by subclasses."""
+        return parameters
 
     @abstractmethod
-    def encode(self, input_value: float, output_sdr: SDR) -> None:
+    def encode(self, input_value: T, output_sdr: SDR) -> None:
+        """Encodes the input value into the provided output SDR."""
         raise NotImplementedError("Subclasses must implement this method")
-
-    # @abstractmethod
-    # def set_parameters(self, parameters) -> bool:
-    #    raise NotImplementedError("Subclasses must implement this method")

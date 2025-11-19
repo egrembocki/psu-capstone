@@ -1,9 +1,7 @@
 """Category Encoder implementation"""
 
 import copy
-import math
-import random
-import struct
+
 from dataclasses import dataclass
 from typing import List
 
@@ -37,13 +35,27 @@ class CategoryEncoder(BaseEncoder):
                     :class:`.ScalarEncoder` for details. (default False)
     """
 
-    def __init__(self, parameters: CategoryParameters, dimensions: List[int] = None):
+    def __init__(self, parameters: CategoryParameters, dimensions: List[int] | None = None):
         super().__init__(dimensions)
 
         self.parameters = copy.deepcopy(parameters)
 
     def encode(self, input_value: str, output_sdr):
-        return super().encode(input_value, output_sdr)
+        # Get category list and width
+        category_list = self.parameters.category_list
+        w = self.parameters.w
+
+        # Find index of input_value in category_list
+        try:
+            idx = category_list.index(input_value)
+        except ValueError:
+            # Unknown category: set no bits
+            output_sdr.set_sparse([])
+            return
+
+        # Set bits for this category
+        bits = list(range(idx * w, (idx + 1) * w))
+        output_sdr.set_sparse(bits)
 
     def check_parameters(self, parameters: CategoryParameters):
 

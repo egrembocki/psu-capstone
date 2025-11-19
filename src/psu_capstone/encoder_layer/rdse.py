@@ -3,12 +3,14 @@ import math
 import random
 import struct
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import mmh3
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.utils import Parameters
+
 
 # from SDR import SDR
 # from SDR_Encoder_Temp.BaseEncoder import BaseEncoder
@@ -26,7 +28,11 @@ class RDSEParameters:
 
 
 class RandomDistributedScalarEncoder(BaseEncoder):
-    def __init__(self, parameters: RDSEParameters, dimensions: List[int]):
+    """Random Distributed Scalar Encoder (RDSE) implementation."""
+
+    def __init__(
+        self, parameters: RDSEParameters | Parameters, dimensions: Optional[List[int]] = None
+    ):
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
         self.parameters = self.check_parameters(self.parameters)
@@ -70,7 +76,7 @@ class RandomDistributedScalarEncoder(BaseEncoder):
         # output.setSparse(data) #we may need setDense implemented for SDR class
 
     # After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(self, parameters: RDSEParameters):
+    def check_parameters(self, parameters: RDSEParameters | Parameters):
         assert parameters.size > 0
 
         num_active_args = 0

@@ -14,9 +14,10 @@
 
 import copy
 import math
-from ctypes import Structure
+
+from psu_capstone.utils import Parameters
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Optional, Union
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.sdr import SDR
@@ -122,7 +123,11 @@ class ScalarEncoder(BaseEncoder):
      * $ python -m htm.examples.encoders.scalar_encoder --help
      */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]) -> None:
+    def __init__(
+        self,
+        parameters: ScalarEncoderParameters | Parameters,
+        dimensions: Optional[List[int]] = None,
+    ) -> None:
         """Initialize the ScalarEncoder with given parameters and dimensions."""
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
@@ -147,7 +152,7 @@ class ScalarEncoder(BaseEncoder):
         an SDR that has the encoding of the input value.
     """
 
-    def encode(self, input_value: float, output_sdr: SDR) -> None:
+    def encode(self, input_value: float | int, output_sdr: SDR) -> None:
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
         if self._resolution <= 0.0:
@@ -160,7 +165,7 @@ class ScalarEncoder(BaseEncoder):
             if self._periodic:
                 """TODO: implement modlus to inputs"""
                 input_value = input_value % self._maximum
-                # raise NotImplementedError("Periodic input clipping not implemented.")
+
             else:
                 input_value = max(input_value, self._minimum)
                 input_value = min(input_value, self._maximum)
@@ -196,7 +201,9 @@ class ScalarEncoder(BaseEncoder):
         output_sdr.set_sparse(sparse)
 
     # After encode we may need a check_parameters method since most of the encoders have this
-    def check_parameters(self, parameters: ScalarEncoderParameters):
+    def check_parameters(
+        self, parameters: ScalarEncoderParameters | Parameters
+    ) -> ScalarEncoderParameters | Parameters:
         """
         Check parameters method is used to verify that the correct parameters were entered
         and reject the user when they are not.
