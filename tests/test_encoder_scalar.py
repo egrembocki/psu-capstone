@@ -387,8 +387,8 @@ def test_scalar_encoder_serialization():
 
     for encoder in inputs:
         if type(encoder) is ScalarEncoder:
-            p1 = encoder.parameters
-            p2 = encoder.parameters
+            p1 = encoder._parameters
+            p2 = encoder._parameters
 
             assert p1.size == p2.size
             assert getattr(p1, "category", None) == getattr(p2, "category", None)

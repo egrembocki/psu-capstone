@@ -15,25 +15,26 @@ from psu_capstone.encoder_layer.sdr import SDR
 
 @dataclass
 class CategoryParameters:
+    """Parameters for the Category Encoder."""
+
+    """
+    List of categories to use.
+    """
+    w: int
     """
     The w is the width in bits per category. So, if you have 5 categories and w=3
     we will have 5*3+3=18 bits total. The extra 3 comes from the unknown category.
-    """
-
-    w: int
-    """
-    List of categories to use.
     """
     category_list: List[str]
     """
     This is the name of the encoder, can probably be removed.
     """
+    rdse_used: Optional[bool] = True
     """
     This is an optional default true bool. The category encoder will use the
     RDSE for each category encoded unless this is false, then it will use a
     basic scalar encoder like the htm core implementation.
     """
-    RDSEused: Optional[bool] = True
 
 
 class CategoryEncoder(BaseEncoder):
@@ -53,13 +54,13 @@ class CategoryEncoder(BaseEncoder):
                     :class:`.ScalarEncoder` for details. (default False)
     """
 
-    def __init__(self, parameters: CategoryParameters, dimensions: List[int] = None):
+    def __init__(self, parameters: CategoryParameters, dimensions: List[int] | None = None):
         super().__init__(dimensions)
 
         self.parameters = copy.deepcopy(parameters)
         self._w = self.parameters.w
         self._category_list = self.parameters.category_list
-        self._RDSEused = self.parameters.RDSEused
+        self._RDSEused = self.parameters.rdse_used
 
         self._num_categories = len(self._category_list) + 1
 
@@ -93,8 +94,6 @@ class CategoryEncoder(BaseEncoder):
                 size=0,
                 radius=1.0,
                 resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
             )
             self.encoder = ScalarEncoder(self.sp, dimensions=[self.sp.size])
             self._dimensions = [self.sp.size]

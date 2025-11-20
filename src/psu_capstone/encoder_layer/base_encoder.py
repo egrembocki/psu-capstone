@@ -23,10 +23,9 @@
 
 """
 
-from psu_capstone.utils import Parameters
 from abc import ABC, abstractmethod
 from math import prod
-from typing import List, TypeVar, Generic, Any, Optional
+from typing import Any, List
 
 from psu_capstone.encoder_layer.sdr import SDR
 
@@ -34,14 +33,11 @@ from psu_capstone.encoder_layer.sdr import SDR
 class BaseEncoder(ABC):
     """Base class for all encoders"""
 
-    def __init__(self, dimensions: Optional[List[int]] = None):
+    def __init__(self, dimensions: List[int] | None = None, size: int | None = None):
         """Initializes the BaseEncoder with given dimensions."""
 
         self._dimensions: List[int] = dimensions if dimensions is not None else []
-        if self._dimensions:
-            self._size: int = prod(int(dim) for dim in self._dimensions)
-        else:
-            self._size: int = 0
+        self._size: int = size if size is not None else prod(int(dim) for dim in self._dimensions)
 
     @property
     def dimensions(self) -> List[int]:
@@ -58,6 +54,16 @@ class BaseEncoder(ABC):
         self._size = 0
 
     @abstractmethod
-    def encode(self, input_value: float, output_sdr: SDR) -> None:
+    def encode(self, input_value: float | int | str, output_sdr: SDR) -> None:
         """Encodes the input value into the provided output SDR."""
         raise NotImplementedError("Subclasses must implement this method")
+
+
+if __name__ == "__main__":
+
+    print("Testing BaseEncoder abstract class")
+
+    class TestEncoder(BaseEncoder):  # This will raise an error since BaseEncoder is abstract
+
+        def encode(self, input_value: float | int | str, output_sdr: SDR) -> None:
+            pass

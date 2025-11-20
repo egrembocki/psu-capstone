@@ -1,55 +1,149 @@
-"""Date encoder 2.0 for HTM, ported to Python from the C++ implementation."""
+"""Date encoder 2.0 for HTM, ported to Python from the C++ implementation.
+
+This module provides a DateEncoder class that encodes various temporal features
+(season, day of week, weekend, custom days, holiday, time of day) into a Sparse
+Distributed Representation (SDR) for use in Hierarchical Temporal Memory (HTM) systems.
+
+The encoder uses ScalarEncoder instances for each enabled feature, concatenating
+their outputs into a single SDR. The configuration is controlled via the
+DateEncoderParameters dataclass.
+
+Usage:
+    params = DateEncoderParameters(
+        season_width=10,
+        day_of_week_width=5,
+        weekend_width=3,
+        holiday_width=4,
+        time_of_day_width=6,
+        custom_width=3,
+        custom_days=["mon,wed,fri"],
+        verbose=True,
+    )
+    encoder = DateEncoder(params)
+    output = SDR(dimensions=[encoder.size])
+    encoder.encode(datetime.now(), output)
+    print("Output size:", output.size)
+    print("Active indices:", output.get_sparse())
+"""
 
 from __future__ import annotations
 
 import copy
 import math
 import time
-import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Set
+
+import pandas as pd
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
+from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder, RDSEParameters
 from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
 
 
 @dataclass
 class DateEncoderParameters:
-    """Parameters for DateEncoder."""
+    """Configuration parameters for DateEncoder.
+
+       Each field controls the encoding of a specific temporal feature.
+       Set the corresponding width to a nonzero value to enable encoding for that feature.
+
+       Attributes:
+           season_width: Number of active bits for season (day of year).
+           season_radius: Radius for season encoding (days).
+           day_of_week_width: Number of active bits for day of week.
+           day_of_week_radius: Radius for day of week encoding.
+           weekend_width: Number of active bits for weekend flag.
+           holiday_width: Number of active bits for holiday encoding.
+           holiday_dates: List of holidays as [month, day] or [year, month, day].
+           time_of_day_width: Number of active bits for time of day.
+           time_of_day_radius: Radius for time of day encoding (hours).
+           custom_width: Number of active bits for custom day groups.
+           custom_days: List of custom day group strings (e.g., ["mon,wed,fri"]).
+
+
+           /**
+    * The DateEncoderParameters structure is used to pass configuration parameters to
+    * the DateEncoder. These Six (6) members define the total number of bits in the output.
+    *     Members:  season, dayOfWeek, weekend, holiday, timeOfDay, customDays
+    *
+    * Each member is a separate attribute of a date/time that can be activated
+    * by providing a width parameter and sometimes a radius parameter.
+    * Each is implemented separately using a ScalarEncoder and the results
+    * are concatinated together.
+    *
+    * The width attribute determines the number of bits to be used for each member.
+    * and 0 means don't use.  The width is like a weighting to indicate the relitive importance
+    * of this member to the overall data value.
+    *
+    * The radius attribute indicates the size of the bucket; the quantization size.
+    * All values in the same bucket generate the same pattern.
+    *
+    * To avoid problems with leap year, consider a year to have 366 days.
+    * The timestamp will be converted to components such as time and dst based on
+    * local timezone and location (see localtime()).
+    *
+    */
+    """
 
     # Season: day of year (0..366), default radius 91.5 days (~4 seasons)
     season_width: int = 0
+    """Number of active bits for season (day of year). how many bits to apply to season
+      /**
+   *  Member: season -  The portion of the year. Unit is day.  Default radius is
+   *                    91.5 days which gives 4 seasons per year.
+   */
+   """
+
     season_radius: float = 91.5
+    """Radius for season encoding, in days (default ~4 seasons).
+    days per season
+    """
 
     # Day of week: Monday=0, Tuesday=1, ... (C++ maps from tm_wday)
     day_of_week_width: int = 0
+    """Number of active bits for day of week, how many bits to apply to day of week.
+    
+    """
+
     day_of_week_radius: float = 1.0
+    """Radius for day of week encoding, every day is a separate bucket."""
 
     # Weekend flag (0/1, Fri 6pm through Sun midnight)
     weekend_width: int = 0
+    """Number of active bits for weekend flag."""
 
     # Holiday: boolean-ish with ramp, default dates = [[12, 25]] (month, day)
     holiday_width: int = 0
+    """Number of active bits for holiday encoding."""
+
     holiday_dates: List[List[int]] = field(default_factory=lambda: [[12, 25]])
+    """List of holidays as [month, day] or [year, month, day]."""
 
     # Time of day: 0..24 hours
     time_of_day_width: int = 0
+    """Number of active bits for time of day."""
+
     time_of_day_radius: float = 4.0
+    """Radius for time of day encoding, in hours."""
 
     # Custom day groups (e.g. ["mon,wed,fri"])
     custom_width: int = 0
-    custom_days: List[str] = field(default_factory=list)
+    """Number of active bits for custom day groups."""
 
-    # Verbose logging
-    verbose: bool = False
+    custom_days: List[str] = field(default_factory=list)
+    """List of custom day group strings (e.g., ["mon,wed,fri"])."""
+
+    rdse_used: bool = True
+    """Enable RDSE usage for date encoder."""
 
 
 class DateEncoder(BaseEncoder):
     """
-    Python port of the HTM DateEncoder, using the existing ScalarEncoder + SDR.
-    Encodes up to 6 attributes of a timestamp into one SDR:
+    Encodes date/time information into a Sparse Distributed Representation (SDR)
+    for use in HTM systems. Supports up to six temporal features:
 
       - season       (day-of-year)
       - dayOfWeek
@@ -57,150 +151,189 @@ class DateEncoder(BaseEncoder):
       - customDays
       - holiday
       - timeOfDay
+
+    Each feature is encoded using a RDSE Encoder, and the resulting SDRs are
+    concatenated into a single output SDR.
+
+    Attributes:
+        _parameters: Configuration parameters for the encoder.
+        _seasonEncoder: RDSE Encoder for season (day of year).
+        _dayOfWeekEncoder: RDSE Encoder for day of week.
+        _weekendEncoder: RDSE Encoder for weekend flag.
+        _customDaysEncoder: RDSE Encoder for custom day groups.
+        _holidayEncoder: RDSE Encoder for holidays.
+        _timeOfDayEncoder: RDSE Encoder for time of day.
+        _customDays: Set of integer day indices for custom days.
+        _bucketMap: Mapping from feature index to bucket position.
+        _buckets: List of bucket values for each feature.
+        _size: Total number of bits in the output SDR.
+        _rdse_used: Flag indicating if RDSE is used.
     """
 
+    # Constants for bucketMap keys
     SEASON = 0
+    """Index for season feature in bucketMap."""
+
     DAYOFWEEK = 1
+    """Index for day of week feature in bucketMap."""
+
     WEEKEND = 2
+    """Index for weekend feature in bucketMap."""
+
     CUSTOM = 3
+    """Index for custom days feature in bucketMap."""
+
     HOLIDAY = 4
+    """Index for holiday feature in bucketMap."""
+
     TIMEOFDAY = 5
+    """Index for time of day feature in bucketMap."""
 
     def __init__(
-        self, parameters: DateEncoderParameters, dimensions: Optional[List[int]] = None
+        self, parameters: DateEncoderParameters, dimensions: List[int] | None = None
     ) -> None:
-        """Initialise all scalar sub-encoders and supporting metadata."""
-        super().__init__(dimensions)
-        self.parameters = copy.deepcopy(parameters)
+        """
+        Initialize the DateEncoder with the given parameters.
 
-        # encoders
-        self.seasonEncoder: ScalarEncoder | None = None
-        self.dayOfWeekEncoder: ScalarEncoder | None = None
-        self.weekendEncoder: ScalarEncoder | None = None
-        self.customDaysEncoder: ScalarEncoder | None = None
-        self.holidayEncoder: ScalarEncoder | None = None
-        self.timeOfDayEncoder: ScalarEncoder | None = None
+        Args:
+            parameters: DateEncoderParameters instance specifying encoding options.
+            dimensions: Optional SDR dimensions (unused, for compatibility).
 
-        # for custom days mapping
-        self.customDays_: Set[int] = set()
+        Raises:
+            ValueError: If custom_days is specified but empty, or if no widths are provided.
+        """
+        self._parameters = copy.deepcopy(parameters)
+        """DateEncoderParameters: Configuration parameters for the encoder."""
+        self._customDays: Set[int] = set()
+        """Set of integer day indices for custom days."""
+        self._bucketMap: Dict[int, int] = {}
+        """Mapping from feature index to bucket position."""
+        self._buckets: List[float] = []
+        """List of bucket values for each feature."""
+        self._size: int = 0
+        """Total number of bits in the output SDR."""
+        self._rdse_used = parameters.rdse_used
+        """Flag indicating if RDSE is used."""
 
-        # bucket index → position in buckets_
-        self.bucketMap: Dict[int, int] = {}
-        self.buckets_: List[float] = []
-        # public alias like C++: const std::vector<Real64> &buckets = buckets_;
-        self.buckets = self.buckets_
+        # Declare one encoder per feature
+        self._season_encoder = None
+        """Encoder for season (day of year)."""
+        self._dayofweek_encoder = None
+        """Encoder for day of week."""
+        self._weekend_encoder = None
+        """Encoder for weekend flag."""
+        self._customdays_encoder = None
+        """Encoder for custom day groups."""
+        self._holiday_encoder = None
+        """Encoder for holidays."""
+        self._timeofday_encoder = None
+        """Encoder for time of day."""
 
-        self._size: int = 0  # total size of all sub-encoders
-        self._initialize(parameters)
+        self._initialize(self._parameters)
 
-    # ------------------------------------------------------------------ #
-    # Helpers
-    # ------------------------------------------------------------------ #
+        self._dimensions = dimensions if dimensions is not None else [self._size]
 
-    def _log(self, msg: str) -> None:
-        """Emit verbose diagnostic messages when verbose mode is enabled."""
-        if self.parameters.verbose:
-            print("[DateEncoder] " + msg)
+        super().__init__(self._dimensions, self._size)
 
     @property
-    def size(self) -> int:
-        """Total number of bits produced by the configured sub-encoders."""
-        return self._size
-
-    # ------------------------------------------------------------------ #
-    # Initialization (mirrors C++ initialize())
-    # ------------------------------------------------------------------ #
+    def buckets(self) -> List[float]:
+        """Mapping from feature index to bucket position."""
+        return self._buckets
 
     def _initialize(self, parameters: DateEncoderParameters) -> None:
-        """Configure scalar encoders according to the supplied parameters."""
-        args = parameters
-        size = 0
-        self.bucketMap.clear()
-        self.buckets_.clear()
+        """
+        Configure scalar or RDSE encoders for each enabled feature based on parameters.
 
-        # -------- Season --------
-        if args.season_width != 0:
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=366.0,
-                clip_input=False,
-                periodic=True,
-                category=False,
-                active_bits=args.season_width,
-                sparsity=0.0,
-                size=0,
-                radius=args.season_radius,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.seasonEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.SEASON] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.seasonEncoder._size
-            self._log(
-                f"Season encoder: buckets ~ {(p.maximum - p.minimum) / self.seasonEncoder._radius}, "
-                f"active bits {self.seasonEncoder._active_bits}, width {self.seasonEncoder._size}"
-            )
+        Args:
+            parameters: DateEncoderParameters instance.
+
+        Raises:
+            ValueError: If custom_days are invalid or no widths are provided.
+        """
+
+        size = 0
+        self._bucketMap.clear()
+        self._buckets.clear()
+
+        use_rdse = self._rdse_used
+
+        # -------- Season feature Encoder --------
+        if parameters.season_width != 0:
+            if use_rdse:
+                p = RDSEParameters(
+                    size=parameters.season_width * 2, sparsity=0.10, radius=parameters.season_radius
+                )
+                self._season_encoder = RandomDistributedScalarEncoder(p)
+                assert self._season_encoder is not None
+                assert self._season_encoder.size > 0
+                encoder_size = self._season_encoder.size
+                print("Using RDSE for season encoder", encoder_size)
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=366.0,
+                    periodic=True,
+                    active_bits=parameters.season_width,
+                    radius=parameters.season_radius,
+                    size=parameters.season_width * 2,
+                )
+                self._season_encoder = ScalarEncoder(p)
+                encoder_size = self._season_encoder.size
+            self._bucketMap[self.SEASON] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
         # -------- Day of week --------
-        if args.day_of_week_width != 0:
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=7.0,
-                clip_input=False,
-                periodic=True,
-                category=False,
-                active_bits=args.day_of_week_width,
-                sparsity=0.0,
-                size=0,
-                radius=args.day_of_week_radius,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.dayOfWeekEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.DAYOFWEEK] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.dayOfWeekEncoder._size
-            self._log(
-                f"DayOfWeek encoder: buckets ~ {(p.maximum - p.minimum) / self.dayOfWeekEncoder._radius}, "
-                f"active bits {self.dayOfWeekEncoder._active_bits}, width {self.dayOfWeekEncoder._size}"
-            )
+        if parameters.day_of_week_width != 0:
+            if use_rdse:
+                p = RDSEParameters(
+                    size=parameters.day_of_week_width * 2,
+                    sparsity=0.10,
+                    radius=parameters.day_of_week_radius,
+                )
+                self._dayofweek_encoder = RandomDistributedScalarEncoder(p)
+                encoder_size = self._dayofweek_encoder.size
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=7.0,
+                    periodic=True,
+                    active_bits=parameters.day_of_week_width,
+                    radius=parameters.day_of_week_radius,
+                    size=parameters.day_of_week_width * 2,
+                )
+                self._dayofweek_encoder = ScalarEncoder(p)
+                encoder_size = self._dayofweek_encoder.size
+            self._bucketMap[self.DAYOFWEEK] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
         # -------- Weekend --------
-        if args.weekend_width != 0:
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=1.0,
-                clip_input=False,
-                periodic=False,
-                category=True,  # binary category 0/1
-                active_bits=args.weekend_width,
-                sparsity=0.0,
-                size=0,
-                radius=0.0,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.weekendEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.WEEKEND] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.weekendEncoder._size
-            self._log(
-                f"Weekend encoder: categories 2, active bits {self.weekendEncoder._active_bits}, "
-                f"width {self.weekendEncoder._size}"
-            )
+        if parameters.weekend_width != 0:
+            if use_rdse:
+                p = RDSEParameters(size=parameters.weekend_width * 2, sparsity=0.10, category=True)
+                self._weekend_encoder = RandomDistributedScalarEncoder(p)
+                encoder_size = self._weekend_encoder.size
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=1.0,
+                    category=True,
+                    active_bits=parameters.weekend_width,
+                    size=parameters.weekend_width * 2,
+                )
+                self._weekend_encoder = ScalarEncoder(p)
+                encoder_size = self._weekend_encoder.size
+            self._bucketMap[self.WEEKEND] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
         # -------- Custom days --------
-        if args.custom_width != 0:
-            if not args.custom_days:
+        if parameters.custom_width != 0:
+            if not parameters.custom_days:
                 raise ValueError(
                     "DateEncoder: custom_days must contain at least one pattern string."
                 )
-
-            # Map strings to Python tm_wday (0=Mon..6=Sun)
             daymap = {
                 "mon": 0,
                 "tue": 1,
@@ -210,7 +343,7 @@ class DateEncoder(BaseEncoder):
                 "sat": 5,
                 "sun": 6,
             }
-            for spec in args.custom_days:
+            for spec in parameters.custom_days:
                 s = spec.lower()
                 parts = [x.strip() for x in s.split(",") if x.strip()]
                 for day in parts:
@@ -219,108 +352,112 @@ class DateEncoder(BaseEncoder):
                     key = day[:3]
                     if key not in daymap:
                         raise ValueError(f"DateEncoder custom_days parse error near '{day}'")
-                    self.customDays_.add(daymap[key])
-
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=1.0,
-                clip_input=False,
-                periodic=False,
-                category=True,  # boolean category
-                active_bits=args.custom_width,
-                sparsity=0.0,
-                size=0,
-                radius=0.0,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.customDaysEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.CUSTOM] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.customDaysEncoder._size
-            self._log(
-                f"CustomDays encoder: boolean, active bits {self.customDaysEncoder._active_bits}, "
-                f"width {self.customDaysEncoder._size}"
-            )
+                    self._customDays.add(daymap[key])
+            if use_rdse:
+                p = RDSEParameters(size=parameters.custom_width * 2, sparsity=0.10, category=True)
+                self._customdays_encoder = RandomDistributedScalarEncoder(p)
+                encoder_size = self._customdays_encoder.size
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=1.0,
+                    category=True,
+                    active_bits=parameters.custom_width,
+                    size=parameters.custom_width * 2,
+                )
+                self._customdays_encoder = ScalarEncoder(p)
+                encoder_size = self._customdays_encoder.size
+            self._bucketMap[self.CUSTOM] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
         # -------- Holiday --------
-        if args.holiday_width != 0:
-            for day in args.holiday_dates:
+        if parameters.holiday_width != 0:
+            for day in parameters.holiday_dates:
                 if len(day) not in (2, 3):
                     raise ValueError(
                         "DateEncoder: holiday_dates entries must be [mon,day] or [year,mon,day]."
                     )
-
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=2.0,
-                clip_input=False,
-                periodic=True,
-                category=False,
-                active_bits=args.holiday_width,
-                sparsity=0.0,
-                size=0,
-                radius=1.0,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.holidayEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.HOLIDAY] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.holidayEncoder._size
-            self._log(
-                f"Holiday encoder: buckets ~ {(p.maximum - p.minimum) / self.holidayEncoder._radius}, "
-                f"active bits {self.holidayEncoder._active_bits}, width {self.holidayEncoder._size}"
-            )
+            if use_rdse:
+                p = RDSEParameters(size=parameters.holiday_width * 2, sparsity=0.10, radius=1.0)
+                self._holiday_encoder = RandomDistributedScalarEncoder(p)
+                encoder_size = self._holiday_encoder.size
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=2.0,
+                    periodic=True,
+                    active_bits=parameters.holiday_width,
+                    size=parameters.holiday_width * 2,
+                    radius=1.0,
+                )
+                self._holiday_encoder = ScalarEncoder(p)
+                encoder_size = self._holiday_encoder.size
+            self._bucketMap[self.HOLIDAY] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
         # -------- Time of day --------
-        if args.time_of_day_width != 0:
-            p = ScalarEncoderParameters(
-                minimum=0.0,
-                maximum=24.0,
-                clip_input=False,
-                periodic=True,
-                category=False,
-                active_bits=args.time_of_day_width,
-                sparsity=0.0,
-                size=0,
-                radius=args.time_of_day_radius,
-                resolution=0.0,
-                size_or_radius_or_category_or_resolution=0,
-                active_bits_or_sparsity=0,
-            )
-            self.timeOfDayEncoder = ScalarEncoder(p, [1])
-            self.bucketMap[self.TIMEOFDAY] = len(self.buckets_)
-            self.buckets_.append(0.0)
-            size += self.timeOfDayEncoder._size
-            self._log(
-                f"TimeOfDay encoder: buckets ~ {(p.maximum - p.minimum) / self.timeOfDayEncoder._radius}, "
-                f"active bits {self.timeOfDayEncoder._active_bits}, width {self.timeOfDayEncoder._size}"
-            )
+        if parameters.time_of_day_width != 0:
+            if use_rdse:
+                p = RDSEParameters(
+                    size=parameters.time_of_day_width * 2,
+                    sparsity=0.10,
+                    radius=parameters.time_of_day_radius,
+                )
+                self._timeofday_encoder = RandomDistributedScalarEncoder(p)
+                encoder_size = self._timeofday_encoder.size
+            else:
+                p = ScalarEncoderParameters(
+                    minimum=0.0,
+                    maximum=24.0,
+                    periodic=True,
+                    active_bits=parameters.time_of_day_width,
+                    size=parameters.time_of_day_width * 2,
+                    radius=parameters.time_of_day_radius,
+                )
+                self._timeofday_encoder = ScalarEncoder(p)
+                encoder_size = self._timeofday_encoder.size
+            self._bucketMap[self.TIMEOFDAY] = len(self._buckets)
+            self._buckets.append(0.0)
+            size += encoder_size
 
-        if size == 0:
-            raise ValueError("DateEncoder: No widths were provided; nothing to encode.")
+        # -------- Final checks --------
 
-        self._size = size
+        assert size > 0, "DateEncoder: At least one width parameter must be nonzero."
+
+        self._size = size  # Total size of the DateEncoder
 
     # ------------------------------------------------------------------ #
     # Public encode API (similar to C++ overloads)
     # ------------------------------------------------------------------ #
 
-    def encode(self, input_value: datetime | pd.Timestamp, output: SDR) -> None:
+    def encode(
+        self, input_value: datetime | pd.Timestamp | time.struct_time | None, output: SDR
+    ) -> None:
         """
-        Encode a timestamp-like value into `output` SDR.
+        Encode a timestamp-like value into the provided SDR.
 
-        input_value:
-          - None          -> current local time
-          - int/float     -> UNIX epoch seconds
-          - datetime      -> datetime (naive treated as local)
-          - struct_time   -> used directly
+          /**
+            * encode the input and generate the output pattern.
+            * The input is unix time, same as would be generated by time(0)
+            * which is seconds since EPOCH, Jan 1, 1970.
+            * Inputs of time_point or struc tm are converted to time_t.
+            *
+            * Output is an array of 0's and 1's in an SDR container.
+            */
+
+        Args:
+            input_value: The value to encode. Can be None (current time), int/float (epoch seconds),
+                         datetime, or time.struct_time.
+            output: SDR instance to write the encoding into.
+
+        Raises:
+            ValueError: If output SDR size does not match encoder size.
+            TypeError: If input_value type is unsupported.
+            RuntimeError: If encoder is misconfigured.
         """
-        if output.size != self.size:
-            raise ValueError(f"Output SDR size {output.size} != DateEncoder size {self.size}")
+        assert output.size == self._size, "Output SDR size does not match encoder size."
 
         if input_value is None:
             t = time.localtime()
@@ -334,109 +471,111 @@ class DateEncoder(BaseEncoder):
         else:
             raise TypeError(f"Unsupported type for DateEncoder.encode: {type(input_value)}")
 
-        # Collect per-attribute SDRs to later concatenate
         sdrs: List[SDR] = []
 
-        # verbose
-        self._log(f"Encoding {time.asctime(t)} {'(dst)' if t.tm_isdst > 0 else ''}")
-
         # --- Season: day of year (0-based) ---
-        if self.seasonEncoder is not None:
-            day_of_year = float(t.tm_yday - 1)  # tm_yday is 1..366
-            s = SDR(dimensions=[self.seasonEncoder._size])
-            self.seasonEncoder.encode(day_of_year, s)
-            # bucket index: floor(day / radius)
-            bucket_idx = math.floor(day_of_year / self.seasonEncoder._radius)
-            self.buckets_[self.bucketMap[self.SEASON]] = float(bucket_idx)
-            self._log(f"  season: {day_of_year} -> bucket {bucket_idx}")
-            sdrs.append(s)
+        if self._season_encoder is not None:
+            day_of_year = float(t.tm_yday - 1)
+            encoder = self._season_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(day_of_year, sdr)
+            radius = getattr(encoder, "_radius", 1.0)
+            bucket_idx = math.floor(day_of_year / radius)
+            self._buckets[self._bucketMap[self.SEASON]] = float(bucket_idx)
+            sdrs.append(sdr)
 
-        # --- Day of week (Monday=0..Sunday=6, same as header comment) ---
-        if self.dayOfWeekEncoder is not None:
-            # C++: dayOfWeek = (tm_wday + 6) % 7, with tm_wday 0=Sun..6=Sat
-            # Python tm_wday: 0=Mon..6=Sun
-            # So emulate C++ tm_wday first:
-            c_tm_wday = (t.tm_wday + 1) % 7  # now 0=Sun..6=Sat
+        # --- Day of week ---
+        if self._dayofweek_encoder is not None:
+            c_tm_wday = (t.tm_wday + 1) % 7
             day_of_week = float((c_tm_wday + 6) % 7)
-            s = SDR(dimensions=[self.dayOfWeekEncoder._size])
-            self.dayOfWeekEncoder.encode(day_of_week, s)
-            radius = max(self.dayOfWeekEncoder._radius, 1e-9)
+            encoder = self._dayofweek_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(day_of_week, sdr)
+            radius = max(getattr(encoder, "_radius", 1e-9), 1e-9)
             bucket_val = day_of_week - math.fmod(day_of_week, radius)
-            self.buckets_[self.bucketMap[self.DAYOFWEEK]] = bucket_val
-            self._log(f"  dayOfWeek: {day_of_week} -> bucket start {bucket_val}")
-            sdrs.append(s)
+            self._buckets[self._bucketMap[self.DAYOFWEEK]] = bucket_val
+
+            sdrs.append(sdr)
         else:
-            # still compute c_tm_wday for weekend/custom use
             c_tm_wday = (t.tm_wday + 1) % 7
 
-        # --- Weekend flag (Fri 18:00 .. Sun 23:59) ---
-        if self.weekendEncoder is not None:
-            # C++ logic uses C tm_wday (0=Sun..6=Sat)
-            if c_tm_wday == 0 or c_tm_wday == 6 or (c_tm_wday == 5 and t.tm_hour > 18):
-                val = 1.0
-            else:
-                val = 0.0
-            s = SDR(dimensions=[self.weekendEncoder._size])
-            self.weekendEncoder.encode(val, s)
-            self.buckets_[self.bucketMap[self.WEEKEND]] = val
-            self._log(f"  weekend: {val}")
-            sdrs.append(s)
+        # --- Weekend flag ---
+        if self._weekend_encoder is not None:
+            val = (
+                1.0
+                if c_tm_wday == 0 or c_tm_wday == 6 or (c_tm_wday == 5 and t.tm_hour > 18)
+                else 0.0
+            )
+            encoder = self._weekend_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(val, sdr)
+            self._buckets[self._bucketMap[self.WEEKEND]] = val
+
+            sdrs.append(sdr)
 
         # --- Custom days ---
-        if self.customDaysEncoder is not None:
-            # customDays_ holds Python tm_wday (0=Mon..6=Sun)
-            custom_val = 1.0 if t.tm_wday in self.customDays_ else 0.0
-            s = SDR(dimensions=[self.customDaysEncoder._size])
-            self.customDaysEncoder.encode(custom_val, s)
-            self.buckets_[self.bucketMap[self.CUSTOM]] = custom_val
-            self._log(f"  customDay: {custom_val}")
-            sdrs.append(s)
+        if self._customdays_encoder is not None:
+            custom_val = 1.0 if t.tm_wday in self._customDays else 0.0
+            encoder = self._customdays_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(custom_val, sdr)
+            self._buckets[self._bucketMap[self.CUSTOM]] = custom_val
+
+            sdrs.append(sdr)
 
         # --- Holiday ramp ---
-        if self.holidayEncoder is not None:
+        if self._holiday_encoder is not None:
             val = self._holiday_value(t)
-            s = SDR(dimensions=[self.holidayEncoder._size])
-            self.holidayEncoder.encode(val, s)
-            self.buckets_[self.bucketMap[self.HOLIDAY]] = math.floor(val)
-            self._log(f"  holiday: {val}")
-            sdrs.append(s)
+            encoder = self._holiday_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(val, sdr)
+            self._buckets[self._bucketMap[self.HOLIDAY]] = math.floor(val)
+
+            sdrs.append(sdr)
 
         # --- Time of day ---
-        if self.timeOfDayEncoder is not None:
+        if self._timeofday_encoder is not None:
             tod = t.tm_hour + t.tm_min / 60.0 + t.tm_sec / 3600.0
-            s = SDR(dimensions=[self.timeOfDayEncoder._size])
-            self.timeOfDayEncoder.encode(tod, s)
-            radius = max(self.timeOfDayEncoder._radius, 1e-9)
+            encoder = self._timeofday_encoder
+            sdr = SDR(encoder.dimensions)
+            encoder.encode(tod, sdr)
+            radius = max(getattr(encoder, "_radius", 1e-9), 1e-9)
             bucket_val = tod - math.fmod(tod, radius)
-            self.buckets_[self.bucketMap[self.TIMEOFDAY]] = bucket_val
-            self._log(f"  timeOfDay: {tod} -> bucket start {bucket_val}")
-            sdrs.append(s)
+            self._buckets[self._bucketMap[self.TIMEOFDAY]] = bucket_val
+
+            sdrs.append(sdr)
 
         if not sdrs:
             raise RuntimeError("DateEncoder misconfigured: no sub-encoders enabled.")
 
-        # Concatenate SDRs into `output`
         all_sparse: List[int] = []
         offset = 0
-        for s in sdrs:
-            for idx in s.get_sparse():
+        for sdr in sdrs:
+            for idx in sdr.get_sparse():
                 all_sparse.append(idx + offset)
-            offset += s.size
+            offset += sdr.size
 
         output.zero()
         output.set_sparse(all_sparse)
-        self._log(f"  result: size {output.size}, active {len(all_sparse)}")
 
     # ------------------------------------------------------------------ #
     # Holiday helper (matches C++ logic)
     # ------------------------------------------------------------------ #
 
     def _holiday_value(self, t: time.struct_time) -> float:
-        """Return the holiday ramp value for the provided timestamp."""
+        """
+        Compute the holiday ramp value for the given timestamp.
+
+        Args:
+            t: time.struct_time representing the date/time.
+
+        Returns:
+            float: Holiday ramp value (0.0 if not near a holiday, up to 2.0 if near).
+        """
         seconds_per_day = 86400.0
         input_ts = time.mktime(t)
 
-        for h in self.parameters.holiday_dates:
+        for h in self._parameters.holiday_dates:
             if len(h) == 3:
                 year, mon, day = h
             else:
@@ -459,12 +598,28 @@ class DateEncoder(BaseEncoder):
 
     @staticmethod
     def mktime(year: int, mon: int, day: int, hr: int = 0, minute: int = 0, sec: int = 0) -> float:
-        """Convenience to generate unix epoch seconds like the C++ static mktime."""
+        """
+        Convert a date/time to Unix epoch seconds.
+
+        Args:
+            year: Year (e.g., 2024).
+            mon: Month (1-12).
+            day: Day (1-31).
+            hr: Hour (0-23).
+            minute: Minute (0-59).
+            sec: Second (0-59).
+
+        Returns:
+            float: Seconds since Unix epoch.
+        """
         dt = datetime(year, mon, day, hr, minute, sec)
         return time.mktime(dt.timetuple())
 
 
 if __name__ == "__main__":
+    """
+    Example usage of DateEncoder. Prints the encoded SDR for the current time.
+    """
     params = DateEncoderParameters(
         season_width=10,
         day_of_week_width=5,
@@ -473,10 +628,12 @@ if __name__ == "__main__":
         time_of_day_width=6,
         custom_width=3,
         custom_days=["mon,wed,fri"],
-        verbose=True,
     )
     encoder = DateEncoder(params)
-    output = SDR(dimensions=[encoder.size])
-    encoder.encode(datetime.now(), output)
+
+    print("DateEncoder size:", encoder.size)
+
+    output = SDR([encoder.size])
+    encoder.encode(None, output)
     print("Output size:", output.size)
     print("Active indices:", output.get_sparse())
