@@ -20,7 +20,7 @@
  *
  * Reference: https://arxiv.org/pdf/1602.05925.pdf
  */
-
+/home/millscb/repos/psu-capstone/src
 """
 
 from abc import ABC, abstractmethod
@@ -54,7 +54,7 @@ class BaseEncoder(ABC):
         self._size = 0
 
     @abstractmethod
-    def encode(self, input_value: float | int | str, output_sdr: SDR) -> None:
+    def encode(self, input_value: Any, output_sdr: SDR) -> None:
         """Encodes the input value into the provided output SDR."""
         raise NotImplementedError("Subclasses must implement this method")
 

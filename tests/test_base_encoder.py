@@ -11,7 +11,7 @@ def base_encoder_instance():
     """Fixture to create a BaseEncoder instance for testing."""
 
     class TestEncoder(BaseEncoder):
-        def encode(self, input_value, output_sdr: SDR) -> bool:
+        def encode(self, input_value: float, output_sdr: SDR) -> None:
             """Dummy encode method for testing."""
             return True
 

@@ -36,6 +36,7 @@ class ScalarEncoderParameters:
 
      */"""
 
+    # xor clip_input, periodic
     clip_input: bool = True
     """Whether to clip inputs outside the min/max range. Defaults to True.
        /**
@@ -66,6 +67,7 @@ class ScalarEncoderParameters:
      */
     """
 
+    # xor active_bits, sparsity
     active_bits: int = 0  # xor with sparsity
     """Number of active bits in the output SDR. Defaults to 0."""
 
@@ -138,6 +140,7 @@ class ScalarEncoder(BaseEncoder):
         self._active_bits = self._parameters.active_bits
         self._sparsity = self._parameters.sparsity
         self._size = self._parameters.size
+        """Size of the ScalarEncoder"""
         self._radius = self._parameters.radius
         self._resolution = self._parameters.resolution
 
@@ -151,14 +154,14 @@ class ScalarEncoder(BaseEncoder):
         an SDR that has the encoding of the input value.
     """
 
-    def encode(self, input_value: float, output_sdr: SDR) -> bool:
+    def encode(self, input_value: float, output_sdr: SDR) -> None:
         """Encodes the input value into the output SDR."""
 
         assert output_sdr.size == self.size, "Output SDR size does not match encoder size."
 
         if math.isnan(input_value):
             output_sdr.zero()
-            return False
+            return
 
         elif self._clip_input:
             if self._periodic:
@@ -198,10 +201,6 @@ class ScalarEncoder(BaseEncoder):
 
         output_sdr.set_sparse(sparse)
 
-        self.__sdr = output_sdr
-
-        return self.__sdr == output_sdr
-
     # After encode we may need a check_parameters method since most of the encoders have this
 
     def check_parameters(self, parameters: ScalarEncoderParameters) -> ScalarEncoderParameters:
@@ -214,12 +213,31 @@ class ScalarEncoder(BaseEncoder):
         and the size, radius, resolution, and category also being muturally exclusive with each other.
         The user will have an assert that rejects when these are violated.
         """
+        # Ensure size is valid
+        assert parameters.size > 0
 
         # Ensure min is less than max
         assert parameters.minimum <= parameters.maximum
 
-        # Ensure size is valid
-        assert parameters.size > 0
+        # X-OR toggle for clip_input and periodic
+        num_clip_args = 0
+
+        if parameters.periodic:
+            parameters.clip_input = False
+            num_clip_args += 1
+        elif parameters.clip_input:  # defualt case
+            parameters.periodic = False
+            num_clip_args += 1
+        else:
+            print("Neither clip_input nor periodic set, defaulting to clip_input = True")
+            parameters.clip_input = True
+            parameters.periodic = False
+            num_clip_args += 1
+
+        assert (
+            parameters.clip_input != parameters.periodic
+        ), "Incompatible arguments: 'clip_input' and 'periodic'."
+        assert num_clip_args == 1, "Exactly one of 'clip_input' or 'periodic' must be set."
 
         # X-OR toggle for active_bits and sparsity
         num_active_args = 0
@@ -230,44 +248,52 @@ class ScalarEncoder(BaseEncoder):
         elif parameters.sparsity > 0.0:  # given sparsity -- use it
             parameters.active_bits = 0  # reset active_bits
             num_active_args += 1
-
-        # This case may not be needed but adding for safety
-        if parameters.active_bits > 0 and parameters.sparsity > 0.0:
+        else:
+            print("Neither active_bits nor sparsity set, defaulting to sparsity = 0.02")
             parameters.active_bits = 0
             parameters.sparsity = 0.02
+            num_active_args += 1
 
         # Assert X-OR toggle for active_bits and sparsity
-        assert num_active_args != 0, "Missing argument, need one of: 'activeBits' or 'sparsity'."
         assert (parameters.active_bits == 0) != (
             parameters.sparsity == 0
         ), "Exactly one of 'active_bits' or 'sparsity' must be set."
+        assert num_active_args == 1, "Exactly one of 'active_bits' or 'sparsity' must be set."
 
-        # Size / Radius / Category / Resolution
+        # X-OR Radius / Category / Resolution
         num_resolution_args = 0
 
         if parameters.radius > 0.0:
             parameters.category = False
             parameters.resolution = 0.0
             num_resolution_args += 1
-        elif parameters.resolution > 0.0:
-            parameters.category = False
-            parameters.radius = 0.0
-            num_resolution_args += 1
         elif parameters.category:
             parameters.radius = 0.0
             parameters.resolution = 0.0
             num_resolution_args += 1
+        elif parameters.resolution > 0.0:
+            parameters.category = False
+            parameters.radius = 0.0
+            num_resolution_args += 1
+        else:
+            print(
+                "None of 'radius', 'resolution', or 'category' set, defaulting to resolution = 1.0"
+            )
+            parameters.radius = 0.0
+            parameters.category = False
+            parameters.resolution = 1.0
+            num_resolution_args += 1
 
         # Assert X-OR toggle for radius, resolution, category
+        assert (parameters.radius > 0.0) + (parameters.resolution > 0.0) + (
+            parameters.category
+        ) == 1, "Exactly one of 'radius', 'resolution', or 'category' must be set."
         assert (
             num_resolution_args != 0
         ), "Missing argument, need one of: 'radius', 'resolution', 'category'."
         assert (
             num_resolution_args == 1
         ), "Too many arguments, choose only one of: 'radius', 'resolution', 'category'."
-        assert (parameters.radius > 0.0) + (parameters.resolution > 0.0) + (
-            parameters.category
-        ) == 1, "Exactly one of 'radius', 'resolution', or 'category' must be set."
 
         # Category specific checks
         if parameters.category:
@@ -280,19 +306,14 @@ class ScalarEncoder(BaseEncoder):
                 int(parameters.maximum)
             ), "Maximum input value of category encoder must be an integer!"
 
-        if parameters.periodic:
-            assert (
-                not parameters.clip_input
-            ), "Will not clip periodic inputs.  Caller must apply modulus."
-
-        # Copy parameters to args for easier reference
+        # Copy parameters to args for easier reference -- adjust final parameters
         args = parameters
 
         if args.category:
             args.radius = 1.0
 
         # Set active_bits if sparsity is provided
-        if args.sparsity:
+        if args.sparsity > 0.0 and args.active_bits == 0:
             assert 0.0 <= args.sparsity <= 1.0
             assert args.size > 0, "Argument 'sparsity' requires that the 'size' also be given."
             args.active_bits = round(args.size * args.sparsity)
@@ -336,7 +357,7 @@ class ScalarEncoder(BaseEncoder):
         assert args.radius > 0
 
         # compute sparsity
-        args.sparsity = args.active_bits / float(args.size)
+        args.sparsity = args.active_bits / float(args.size - 1)
         assert args.sparsity > 0
 
         return args
