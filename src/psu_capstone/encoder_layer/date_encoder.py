@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 import math
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Optional, Set, Union
+
+import pandas as pd
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
 from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
@@ -64,12 +67,12 @@ class DateEncoder(BaseEncoder):
     HOLIDAY = 4
     TIMEOFDAY = 5
 
-    def __init__(self, parameters: DateEncoderParameters, dimensions: List) -> None:
+    def __init__(
+        self, parameters: DateEncoderParameters, dimensions: Optional[List[int]] = None
+    ) -> None:
         """Initialise all scalar sub-encoders and supporting metadata."""
-        super().__init__(dimensions)  # matches how ScalarEncoder calls BaseEncoder
-        self.args = parameters
-        # For API parity with C++ header
-        self.parameters = self.args
+        super().__init__(dimensions)
+        self.parameters = copy.deepcopy(parameters)
 
         # encoders
         self.seasonEncoder: ScalarEncoder | None = None
@@ -88,9 +91,7 @@ class DateEncoder(BaseEncoder):
         # public alias like C++: const std::vector<Real64> &buckets = buckets_;
         self.buckets = self.buckets_
 
-        # total output size in bits
-        self._size = 0
-
+        self._size: int = 0  # total size of all sub-encoders
         self._initialize(parameters)
 
     # ------------------------------------------------------------------ #
@@ -99,7 +100,7 @@ class DateEncoder(BaseEncoder):
 
     def _log(self, msg: str) -> None:
         """Emit verbose diagnostic messages when verbose mode is enabled."""
-        if self.args.verbose:
+        if self.parameters.verbose:
             print("[DateEncoder] " + msg)
 
     @property
@@ -309,9 +310,7 @@ class DateEncoder(BaseEncoder):
     # Public encode API (similar to C++ overloads)
     # ------------------------------------------------------------------ #
 
-    def encode(
-        self, input_value: Union[int, float, datetime, time.struct_time, None], output: SDR
-    ) -> None:
+    def encode(self, input_value: datetime | pd.Timestamp, output: SDR) -> None:
         """
         Encode a timestamp-like value into `output` SDR.
 
@@ -438,7 +437,7 @@ class DateEncoder(BaseEncoder):
         seconds_per_day = 86400.0
         input_ts = time.mktime(t)
 
-        for h in self.args.holiday_dates:
+        for h in self.parameters.holiday_dates:
             if len(h) == 3:
                 year, mon, day = h
             else:
@@ -477,7 +476,7 @@ if __name__ == "__main__":
         custom_days=["mon,wed,fri"],
         verbose=True,
     )
-    encoder = DateEncoder(parameters=params)
+    encoder = DateEncoder(params)
     output = SDR(dimensions=[encoder.size])
     encoder.encode(datetime.now(), output)
     print("Output size:", output.size)

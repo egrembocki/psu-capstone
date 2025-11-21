@@ -24,6 +24,7 @@ class RDSEParameters:
 class RandomDistributedScalarEncoder(BaseEncoder):
     def __init__(self, parameters: RDSEParameters, dimensions: List[int]):
         super().__init__(dimensions)
+
         parameters = self.check_parameters(parameters)
 
         self.memberSize = parameters.size

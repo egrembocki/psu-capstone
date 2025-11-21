@@ -45,7 +45,7 @@ class SDR:
         __destroy_callbacks: Callbacks invoked during ``destroy``.
     """
 
-    def __init__(self, dimensions: Sequence[int]) -> None:
+    def __init__(self, dimensions: List[int]) -> None:
         """Create a new SDR with the given dimensions.
 
         Args:

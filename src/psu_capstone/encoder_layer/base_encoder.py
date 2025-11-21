@@ -25,25 +25,23 @@
 
 from abc import ABC, abstractmethod
 from math import prod
-from typing import List
+from typing import Any, Generic, List, Optional, TypeVar
 
 from psu_capstone.encoder_layer.sdr import SDR
+from psu_capstone.utils import Parameters
 
 
 class BaseEncoder(ABC):
     """Base class for all encoders"""
 
-    def __init__(self, dimensions: List[int]):
-        """Initialize the BaseEncoder.
-           /**
-        * Members dimensions & size describe the shape of the encoded output SDR.
-        * Size is the total number of bits in the result.
-        * Dimensions is a list of integers describing the shape of the SDR
-           (input space).
-        */"""
-        self._dimensions: List[int] = dimensions
-        self._size: int = prod(int(dim) for dim in self._dimensions)
-        self._sdr: SDR = SDR(self._dimensions)
+    def __init__(self, dimensions: Optional[List[int]] = None):
+        """Initializes the BaseEncoder with given dimensions."""
+
+        self._dimensions: List[int] = dimensions if dimensions is not None else []
+        if self._dimensions:
+            self._size: int = prod(int(dim) for dim in self._dimensions)
+        else:
+            self._size: int = 0
 
     @property
     def dimensions(self) -> List[int]:
@@ -53,15 +51,15 @@ class BaseEncoder(ABC):
     def size(self) -> int:
         return self._size
 
-    @property
-    def sdr(self) -> SDR:
-        return self._sdr
-
     def reset(self):
-        pass
+        """Resets the encoder to its initial state if applicable."""
+
+        self._dimensions = []
+        self._size = 0
 
     @abstractmethod
     def encode(self, input_value: float, output_sdr: SDR) -> None:
+        """Encodes the input value into the provided output SDR."""
         raise NotImplementedError("Subclasses must implement this method")
 
     # @abstractmethod

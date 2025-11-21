@@ -122,8 +122,7 @@ class ScalarEncoder(BaseEncoder):
      * $ python -m htm.examples.encoders.scalar_encoder --help
      */"""
 
-    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int]) -> None:
-        """Initialize the ScalarEncoder with given parameters and dimensions."""
+    def __init__(self, parameters: ScalarEncoderParameters, dimensions: List[int] = None):
         super().__init__(dimensions)
         self.parameters = copy.deepcopy(parameters)
         self.parameters = self.check_parameters(self.parameters)
@@ -209,8 +208,8 @@ class ScalarEncoder(BaseEncoder):
         assert parameters.minimum <= parameters.maximum
         num_active_args = sum([parameters.active_bits > 0, parameters.sparsity > 0])
         assert num_active_args != 0, "Missing argument, need one of: 'active_bits', 'sparsity'."
-        print(str(parameters.sparsity))
-        print(str(parameters.active_bits))
+        # print(str(parameters.sparsity))
+        # print(str(parameters.active_bits))
         assert (
             num_active_args == 1
         ), "Specified both: 'active_bits', 'sparsity'. Specify only one of them." + str(
