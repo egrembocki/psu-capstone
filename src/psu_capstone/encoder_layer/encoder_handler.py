@@ -10,14 +10,14 @@ import copy
 from datetime import datetime
 from typing import Any, List, Self
 
-import pandas as pd
 import numpy as np  # Add this import
+import pandas as pd
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
-from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder, RDSEParameters
-from psu_capstone.encoder_layer.date_encoder import DateEncoder, DateEncoderParameters
 from psu_capstone.encoder_layer.category_encoder import CategoryEncoder, CategoryParameters
+from psu_capstone.encoder_layer.date_encoder import DateEncoder, DateEncoderParameters
+from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder, RDSEParameters
+from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
 
 
@@ -87,10 +87,9 @@ class EncoderHandler:
                         resolution=0.0,
                         category=False,
                         seed=42,
-                    ),
-                    [2, 5],
+                    )
                 )
-                sdr = SDR(encoder.dimensions)
+                sdr = SDR([encoder.size])
                 encoder.encode(float(value), sdr)
 
             elif isinstance(value, int) or isinstance(value, np.integer):
@@ -106,12 +105,9 @@ class EncoderHandler:
                         radius=0.0,
                         category=False,
                         resolution=0.0,
-                        size_or_radius_or_category_or_resolution=0,
-                        active_bits_or_sparsity=0,
-                    ),
-                    [2, 5],
+                    )
                 )
-                sdr = SDR(encoder.dimensions)
+                sdr = SDR([encoder.size])
                 encoder.encode(float(value), sdr)
 
             elif isinstance(value, str):
@@ -119,7 +115,7 @@ class EncoderHandler:
                 category_list = input_data[col_name].unique().tolist()
                 encoder = CategoryEncoder(CategoryParameters(w=3, category_list=category_list))
                 print(
-                    f"Encoding string value '{value}' with category list: {encoder.parameters.category_list}"
+                    f"Encoding string value '{value}' with category list: {encoder._parameters.category_list}"
                 )
                 sdr = SDR(encoder.dimensions)
                 encoder.encode(value, sdr)
@@ -138,12 +134,11 @@ class EncoderHandler:
                         time_of_day_radius=4.0,
                         custom_width=0,
                         custom_days=[],
-                        verbose=False,
-                    ),
-                    [1, 45],
+                        rdse_used=False,
+                    )
                 )
                 # Use encoder.size for SDR size
-                sdr = SDR(encoder.dimensions)
+                sdr = SDR([encoder.size])
                 encoder.encode(value, sdr)
 
             else:
