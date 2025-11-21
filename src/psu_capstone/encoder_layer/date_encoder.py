@@ -31,14 +31,15 @@ from __future__ import annotations
 import copy
 import math
 import time
-import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Set
 
+import pandas as pd
+
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
-from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.rdse import RandomDistributedScalarEncoder, RDSEParameters
+from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 from psu_capstone.encoder_layer.sdr import SDR
 
 
@@ -104,7 +105,7 @@ class DateEncoderParameters:
     # Day of week: Monday=0, Tuesday=1, ... (C++ maps from tm_wday)
     day_of_week_width: int = 0
     """Number of active bits for day of week, how many bits to apply to day of week.
-    
+
     """
 
     day_of_week_radius: float = 1.0

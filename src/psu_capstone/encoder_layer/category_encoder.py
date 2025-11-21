@@ -1,7 +1,6 @@
 """Category Encoder implementation"""
 
 import copy
-
 from dataclasses import dataclass
 from typing import List
 

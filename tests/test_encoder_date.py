@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import List
 
 from psu_capstone.encoder_layer.date_encoder import DateEncoder, DateEncoderParameters
-
 from psu_capstone.encoder_layer.sdr import SDR
 
 
