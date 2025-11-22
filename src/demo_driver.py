@@ -71,7 +71,7 @@ def main():
     print("Raw DataFrame from Excel:")
     print(full_df.head())
 
-    # 👇 pick as many rows as you want here
+    # pick as many rows as you want here
     # demo_df = full_df.iloc[0:10]      # first 10 rows
     # demo_df = full_df                # or ALL rows
     demo_df = full_df.sample(5)  # or a random 5 rows
