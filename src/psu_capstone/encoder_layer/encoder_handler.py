@@ -8,9 +8,10 @@ from the encoded columns.
 
 import copy
 from datetime import datetime
-from typing import Any, List, Self
+from random import randint
+from typing import List, Self
 
-import numpy as np  # Add this import
+import numpy as np
 import pandas as pd
 
 from psu_capstone.encoder_layer.base_encoder import BaseEncoder
@@ -71,19 +72,20 @@ class EncoderHandler:
             TypeError: If a column's value type is unsupported.
             ValueError: If no SDRs are created or an unexpected error occurs.
         """
-        row = input_data.iloc[0]
+        row_one = input_data.iloc[0]
+
         sdrs = []
         self._encoders = []  # Reset encoders for each call
 
-        for col_name, value in row.items():
+        for col_name, value in row_one.items():
             # Select encoder based on dtype
             if isinstance(value, float) or isinstance(value, np.floating):
                 encoder = RandomDistributedScalarEncoder(
                     RDSEParameters(
-                        active_bits=5,
+                        active_bits=2,
                         sparsity=0.0,
-                        size=10,
-                        radius=10.0,
+                        size=100,
+                        radius=12.0,
                         resolution=0.0,
                         category=False,
                         seed=42,
@@ -96,15 +98,15 @@ class EncoderHandler:
                 encoder = ScalarEncoder(
                     ScalarEncoderParameters(
                         minimum=0.0,
-                        maximum=100.0,
+                        maximum=10000.0,
                         clip_input=True,
                         periodic=False,
-                        active_bits=5,
+                        active_bits=3,
                         sparsity=0.0,
-                        size=10,
+                        size=100,
                         radius=0.0,
                         category=False,
-                        resolution=0.0,
+                        resolution=0,
                     )
                 )
                 sdr = SDR([encoder.size])
@@ -123,15 +125,16 @@ class EncoderHandler:
             elif isinstance(value, pd.Timestamp) or isinstance(value, datetime):
                 encoder = DateEncoder(
                     DateEncoderParameters(
-                        season_width=0,
+                        season_width=366,
                         season_radius=91.5,
-                        day_of_week_width=3,
+                        day_of_week_width=5,
                         day_of_week_radius=1.0,
-                        weekend_width=3,
-                        holiday_width=0,
-                        holiday_dates=[[12, 25]],
-                        time_of_day_width=3,
-                        time_of_day_radius=4.0,
+                        weekend_width=2,
+                        holiday_width=3,
+                        holiday_dates=[[12, 25], [1, 1], [11, 28]],
+                        # Example holidays: Christmas, New Year's Day, and Thanksgiving
+                        time_of_day_width=24,
+                        time_of_day_radius=1.0,
                         custom_width=0,
                         custom_days=[],
                         rdse_used=False,
@@ -153,6 +156,8 @@ class EncoderHandler:
             self._encoders.append(copy.deepcopy(encoder))
             sdrs.append(copy.deepcopy(sdr))
 
+        # end for
+
         if not sdrs:
             raise ValueError("No SDRs were created from the input data.")
 
@@ -163,7 +168,7 @@ class EncoderHandler:
                 # If SDR is not 1D, flatten it
                 if len(sdr.dimensions) != 1:
                     flat_sdr = SDR([sdr.size])
-                    flat_sdr.set_sparse(sdr.get_sparse())
+                    flat_sdr.set_sparse(sorted(sdr.get_sparse()))
                     flat_sdrs.append(flat_sdr)
                 else:
                     flat_sdrs.append(sdr)
