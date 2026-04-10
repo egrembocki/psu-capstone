@@ -27,7 +27,7 @@ def build_brain(encoder_type):
         passenger_input = InputField(
             size=2048,
             encoder_params=RDSEParameters(
-                size=1024,
+                size=2048,
                 sparsity=0.4,
                 resolution=1.0,
                 category=False,
@@ -200,11 +200,11 @@ def test_taxi_dataset():
     sp_learning = run_experiment(
         dataset,
         learn=True,
-        train_steps=1000,
+        train_steps=5000,
         start_idx=0,
-        end_idx=2000,
+        end_idx=10000,
         encoder_type="rdse",
-        window=400,
+        window=500,
     )
 
     print("SP Learning result:", sp_learning)
@@ -221,6 +221,8 @@ def test_taxi_dataset():
     ax1.set_ylabel("Mean Absolute Percent Error (MAPE)")
     ax1.set_xlabel("Timestamp")
     ax1.legend()
+    ax1.margins(x=0)
+    ax1.set_xlim(timestamps[0], timestamps[-1])
 
     plt.tight_layout()
     plt.show()
