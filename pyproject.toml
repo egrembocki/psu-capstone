@@ -1,12 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project]
-name = "psu-capstone"
-version = "0.0.1"
+name = "htmrl"
+version = "0.9.0"
 authors = [
     { name = "PSU Capstone Team" },
 ]
 description = "PSU Capstone Project"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -24,7 +31,15 @@ dependencies = [
  "scipy>=1.15.3",
  "gymnasium>=1.2.3",
  "stable-baselines3>=2.7.1",
+ "torch>=2.11.0",
+ "pygame>=2.6.1",
+ "gym-trading-env>=0.3.5",
+ "box2d>=2.3.10",
 ]
+
+[project.optional-dependencies]
+# Pulls in PyTorch; wheels are not available for all platforms (e.g. macOS Intel).
+rl = ["stable-baselines3>=2.7.1"]
 
 
 [dependency-groups]
@@ -35,23 +50,28 @@ dev = [
     "pdoc>=16.0.0",
 ]
 tests = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "pytest-mock>=3.14.0"]
+# pydoclint is intentionally omitted: it registers a flake8 plugin that imports
+# docstring_parser. The PyPI package "docstring-parser" shadows
+# "docstring-parser-fork" (same module name) and breaks that import. Run
+# pydoclint via `uv run --with pydoclint --with docstring-parser-fork` (see Makefile).
 linters = [
     "flake8>=7.3.0",
     "flake8-pyproject>=1.2.3",
     "pep8-naming>=0.15.1",
     "pydocstyle>=6.3.0",
     "interrogate>=1.7.0",
-    "pydoclint>=0.5.0",
 ]
 formatters = ["black>=23.7.0", "isort>=6.0.1"]
 
 
 [project.scripts]
-psu-capstone = "psu_capstone:main"
+psu-capstone = "htmrl:main"
 
 [tool.uv]
 # package = true  # Disabled for offline environments
 
+[tool.uv.sources]
+htm = { git = "https://github.com/pulinagrawal/htm.git" }
 
 [tool.uv.workspace]
 members = [

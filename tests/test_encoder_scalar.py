@@ -32,12 +32,13 @@ from datetime import datetime
 import numpy as np
 import pytest
 
-from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
+from htmrl.encoder_layer.scalar_encoder import ScalarEncoder, ScalarEncoderParameters
 
 
 @pytest.fixture
 def scalar_encoder_instance():
-    """Fixture to create a ScalarEncoder instance for testing. This may change when we get Union working properly."""
+    """Fixture to create a ScalarEncoder instance for testing. This may change when we get Union
+    working properly."""
 
 
 # Helper -- may need to be implemented later
@@ -574,10 +575,11 @@ def hamming_distance_helper(first: np.ndarray, second: np.ndarray) -> int:
 
 def test_scalar_hamming_distance():
     """
-    This test compares the mean hamming distances between consecutive encoded values like 1 compared to 2 all
-    of the way up to 1000. Then we take the mean of these hamming distances. On top of that it compares 1 through 500
-    of encoded values to 9000 through 10000. We then compare these hamming distances. The thought is that the values
-    right next to each other should have less bit differences than ones far away.
+    This test compares the mean hamming distances between consecutive encoded values
+    like 1 compared to 2 all of the way up to 1000. Then we take the mean of these
+    hamming distances. On top of that it compares 1 through 500 of encoded values to
+    9000 through 10000. We then compare these hamming distances. The thought is that
+    the values right next to each other should have less bit differences than ones far away.
     """
     import random
 
@@ -642,3 +644,83 @@ def test_scalar_hamming_distance():
     print("Random hamming distance mean: ", mean_random)
 
     assert mean_consecutive < mean_random < mean_far
+
+
+"""
+Tests for Scalar decode.
+
+decode() returns (value, confidence) by finding the cached encoding with best
+overlap to the input SDR. Cache is populated on encode().
+"""
+
+
+def test_scalar_decode_returns_tuple_value_confidence():
+    """decode() returns (value, confidence) tuple."""
+    params = ScalarEncoderParameters(
+        size=256,
+        active_bits=20,
+        sparsity=0.0,
+        radius=1.0,
+        resolution=0.0,
+        category=False,
+    )
+    encoder = ScalarEncoder(params)
+    encoded = encoder.encode(5.0)
+    decoded = encoder.decode(encoded)
+    assert isinstance(decoded, tuple)
+    assert len(decoded) == 2
+    value, confidence = decoded
+    assert isinstance(confidence, (int, float))
+    assert 0 <= confidence <= 1
+
+
+def test_scalar_decode_round_trip_same_value():
+    """decode(encode(x)) returns (x, high confidence) for same encoder instance."""
+    params = ScalarEncoderParameters(
+        size=256,
+        active_bits=20,
+        sparsity=0.0,
+        radius=1.0,
+        resolution=0.0,
+        category=False,
+    )
+    encoder = ScalarEncoder(params)
+    for x in (0.0, 5.0, 10.0, 100.0):
+        encoded = encoder.encode(x)
+        value, confidence = encoder.decode(encoded)
+        assert value == x, f"Round-trip: encode({x}) then decode should yield {x}, got {value}"
+        assert confidence >= 0.9, f"Round-trip confidence should be high, got {confidence}"
+
+
+def test_scalar_decode_wrong_size_raises():
+    """decode() with wrong-length SDR raises ValueError."""
+    params = ScalarEncoderParameters(
+        size=256,
+        active_bits=20,
+        sparsity=0.0,
+        radius=1.0,
+        resolution=0.0,
+        category=False,
+    )
+    encoder = ScalarEncoder(params)
+    encoder.encode(1.0)  # populate cache so decode has candidates
+    with pytest.raises(ValueError, match="does not match encoder size"):
+        encoder.decode([0] * 100)
+    with pytest.raises(ValueError, match="does not match encoder size"):
+        encoder.decode([0] * 300)
+
+
+def test_scalar_decode_no_candidates_raises():
+    """decode() with no prior encode (empty cache) raises ValueError."""
+    params = ScalarEncoderParameters(
+        size=256,
+        active_bits=20,
+        sparsity=0.0,
+        radius=1.0,
+        resolution=0.0,
+        category=False,
+    )
+    encoder = ScalarEncoder(params)
+    # No encode() call -> _encoding_cache empty -> no candidates
+    with pytest.raises(ValueError, match="No candidate encodings"):
+        encoder.decode([0] * 256)

@@ -28,7 +28,7 @@ Tests validate:
 import numpy as np
 import pytest
 
-from psu_capstone.encoder_layer.category_encoder_new import (
+from htmrl.encoder_layer.category_encoder_new import (
     CategoryEncoderNew,
     CategoryParametersNew,
 )
@@ -108,6 +108,45 @@ def test_with_sparsity():
         a = e.encode(cat)
         assert len(a) == 2048
         assert np.count_nonzero(a) > parameters.sparsity * parameters.size * 0.95
+
+
+def test_with_sparsity_sets_meaningful_active_bits_attribute():
+    """When sparsity is provided, encoder should derive active bits in state."""
+    categories = ["cat1", "cat2", "cat3"]
+    parameters = CategoryParametersNew(sparsity=0.02, category_list=categories, rdse_used=True)
+
+    encoder = CategoryEncoderNew(parameters=parameters)
+
+    assert encoder.active_bits_per_category > 0
+    assert encoder.active_bits_per_category == int(round(encoder.size * encoder.sparsity))
+
+
+def test_with_active_bits_sets_meaningful_sparsity_attribute():
+    """When active_bits_per_category is provided, encoder should derive sparsity in state."""
+    categories = ["cat1", "cat2", "cat3"]
+    active_bits = 41
+    parameters = CategoryParametersNew(
+        active_bits_per_category=active_bits, sparsity=0.0, category_list=categories, rdse_used=True
+    )
+
+    encoder = CategoryEncoderNew(parameters=parameters)
+
+    assert encoder.sparsity > 0.0
+    assert encoder.sparsity == active_bits / encoder.size
+
+
+def test_category_list_mutation_after_construction_does_not_affect_encoder():
+    """Mutating the params object after construction must not corrupt the encoder."""
+    categories = ["ES", "GB", "US"]
+    params = CategoryParametersNew(category_list=categories, rdse_used=False)
+    encoder = CategoryEncoderNew(params)
+    original_encoding = encoder.encode("ES")
+
+    # Mutate the original list after construction
+    params.category_list.append("EXTRA")
+    params.category_list.clear()
+
+    assert encoder.encode("ES") == original_encoding
 
 
 def test_rdse_used():
@@ -304,7 +343,10 @@ def hamming_distance_helper(first, second) -> int:
 
 # Correctness tests
 def test_close_categories_are_similar():
-    """This test checks to make sure categories by each other in the index are more similar than categories distanced from each other."""
+    """
+    This test checks to make sure categories by each other in the index are more similar
+    than categories distanced from each other.
+    """
     params = CategoryParametersNew(
         category_list=["ES", "GB", "US", "RU", "JP", "FR", "GR", "TU", "IT"], rdse_used=True
     )

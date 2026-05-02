@@ -32,11 +32,11 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn import metrics
 
-from psu_capstone.agent_layer.brain import Brain
-from psu_capstone.agent_layer.HTM import ColumnField, InputField
-from psu_capstone.encoder_layer.rdse import RDSEParameters
-from psu_capstone.encoder_layer.scalar_encoder import ScalarEncoderParameters
-from psu_capstone.input_layer.input_handler import InputHandler
+from htmrl.agent_layer.brain import Brain
+from htmrl.agent_layer.HTM import ColumnField, InputField
+from htmrl.encoder_layer.rdse import RDSEParameters
+from htmrl.encoder_layer.scalar_encoder import ScalarEncoderParameters
+from htmrl.input_layer.input_handler import InputHandler
 
 
 def build_dataset(csv_path):

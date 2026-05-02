@@ -24,9 +24,9 @@ Tests validate:
   5. Multi-field coordination
 """
 
-from psu_capstone.agent_layer.brain import Brain
-from psu_capstone.agent_layer.HTM import ColumnField, Field, InputField, OutputField
-from psu_capstone.encoder_layer.rdse import RDSEParameters
+from htmrl.agent_layer.brain import Brain
+from htmrl.agent_layer.HTM import ColumnField, InputField, OutputField
+from htmrl.encoder_layer.rdse import RDSEParameters
 
 
 def create_brain_helper_multi_field() -> Brain:
@@ -61,7 +61,7 @@ def create_brain_helper_single_field() -> Brain:
         size=512,
         active_bits=0,
         sparsity=0.02,
-        resolution=0.001,
+        resolution=1.0,
         category=False,
         seed=5,
     )
@@ -85,7 +85,10 @@ def test_initialize_brain():
     """Test initialize the brain with all field types."""
     b = create_brain_helper_multi_field()
     """
-    Refactored output field to require motor action, so this test is no longer failing. The test is still here to make sure that the brain can be initialized with all field types, and to make sure that the output field is properly initialized with the required motor action parameter.
+    Refactored output field to require motor action, so this test is no longer failing.
+    The test is still here to make sure that the brain can be initialized with all field types,
+    and to make sure that the output field is properly initialized with the required
+    motor action parameter.
     """
     assert len(b._input_fields) == 1
     assert len(b._output_fields) == 1

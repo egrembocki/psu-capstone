@@ -38,8 +38,8 @@ import math
 
 import pytest
 
-from psu_capstone.encoder_layer.coordinate_encoder import CoordinateParameters
-from psu_capstone.encoder_layer.geospatial_encoder import GeospatialEncoder, GeospatialParameters
+from htmrl.encoder_layer.coordinate_encoder import CoordinateParameters
+from htmrl.encoder_layer.geospatial_encoder import GeospatialEncoder, GeospatialParameters
 
 
 def _build_encoder(

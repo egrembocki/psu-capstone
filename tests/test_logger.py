@@ -43,7 +43,7 @@ from pathlib import Path
 
 import pytest
 
-import psu_capstone.log as log_module
+import htmrl.log as log_module
 
 
 class DummyBrain:

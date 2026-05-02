@@ -1,25 +1,31 @@
-"""Driver script to demonstrate the capabilities of the Brain and Trainer classes.
+"""
+Driver script to demonstrate the capabilities of the Brain and Trainer classes.
 Author: Chris Mills @millscb
 
 Date: 2025-02-21
 
-This script includes several demonstration functions that can be run to visualize and understand different components of the Brain and Trainer classes. Each function focuses on a specific aspect, such as data ingestion, encoding, brain structure, and training on datasets. The main function at the bottom can be modified to call any of these demonstration functions as needed.
+This script includes several demonstration functions that can be run to visualize and
+understand different components of the Brain and Trainer classes.
+Each function focuses on a specific aspect, such as data ingestion, encoding, brain
+structure, and training on datasets.
+The main function at the bottom can be modified to call any of these demonstration
+functions as needed.
 
-Note: Some of the demonstration functions may require specific datasets to be available in the DATA_PATH directory. Ensure that the necessary datasets are in place before running those demos.
-
+Note: Some of the demonstration functions may require specific datasets to be available
+in the DATA_PATH directory. Ensure that the necessary datasets are in place before
+running those demos.
 """
 
 import os
 
-import grapher
-
 # Import each layer once so the demos read like the architecture they exercise.
 # This keeps example code focused on workflow rather than repeated module paths.
-import psu_capstone.agent_layer as ag
-import psu_capstone.encoder_layer as en
-import psu_capstone.input_layer as il
-from psu_capstone.log import logger
-from utils import DATA_PATH, PROJECT_ROOT, hamming_distance, overlap
+import htmrl.agent_layer as ag
+import htmrl.encoder_layer as en
+import htmrl.grapher as grapher
+import htmrl.input_layer as il
+from htmrl.log import logger
+from htmrl.utils import DATA_PATH, PROJECT_ROOT, hamming_distance, overlap
 
 ESD = os.path.join(DATA_PATH, "concat_ESData.xlsx")
 REC_CENTER = os.path.join(DATA_PATH, "rec_center.csv")
@@ -142,7 +148,7 @@ def sine_wave_demo(steps: int = 100) -> None:
 
     column = {"sine_wave_input": y.tolist()}
 
-    trainer.train_column(brain, column, steps)
+    trainer.train_column(column, steps, brain)
 
     # show predicted vs actual values for the last 100 steps
     test_results = trainer.test(brain, column, steps)
@@ -261,13 +267,13 @@ if __name__ == "__main__":
     # show_input_data_demo()
     # show_input_to_encoder_demo(3)
     # show_brain_creation_demo()
-    sine_wave_demo(200)
-    fin_data_demo(steps=3)
     # show_input_data_demo()
     # show_input_to_encoder_demo(3)
     # show_brain_creation_demo()
     sine_wave_demo(200)
     # fin_data_demo(steps=3)
 
+    # rec_center_demo(200)
+    # show_field_single_encoding_demo()
     # rec_center_demo(200)
     # show_field_single_encoding_demo()

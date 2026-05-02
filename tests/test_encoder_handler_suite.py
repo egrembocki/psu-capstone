@@ -15,13 +15,12 @@ These tests validate the encoder coordination layer that converts tabular record
 with mixed data types into unified SDR representations for HTM processing.
 """
 
-import copy
 from datetime import datetime
 
 import pandas as pd
 import pytest
 
-from psu_capstone.encoder_layer.encoder_handler import EncoderHandler
+from htmrl.encoder_layer.encoder_handler import EncoderHandler
 
 
 @pytest.fixture
