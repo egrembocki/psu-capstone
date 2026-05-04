@@ -641,13 +641,9 @@ class ColumnField(Field):
     def activate_top_k_columns(self, k: int) -> None:
         """Activate the top-k columns based on overlap.
 
-                If there are ties at the lowest overlap value in top-k,
-        <<<<<<< HEAD:src/psu_capstone/agent_layer/HTM.py
-                randomly select among the tied columns to meet exactly k.
-        =======
-                prefer columns with lower active duty cycle to avoid repeatedly
-                selecting the same tied columns.
-        >>>>>>> main:src/htmrl/agent_layer/HTM.py
+        If there are ties at the lowest overlap value in top-k,
+        prefer columns with lower active duty cycle to avoid repeatedly
+        selecting the same tied columns.
         """
         sorted_columns = sorted(self.columns, key=lambda col: col.overlap, reverse=True)
 
